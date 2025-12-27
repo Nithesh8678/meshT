@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
   Alert,
   SafeAreaView,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
-import { CameraView, CameraType } from "expo-camera";
+import { CameraView } from "expo-camera";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import Animated, {
@@ -19,9 +19,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 import { useWallet, ScannedAddress } from "@/contexts/WalletContext";
+import { useBle } from "@/contexts/BleContext";
+import { fetchMeshTBalance, getMeshTSymbol } from "@/utils/tokenBalance";
 
 // Retro Color Palette - matching Wallet and Mesh pages
 const RetroColors = {
@@ -38,16 +39,24 @@ const RetroColors = {
 
 export default function Scan(): React.JSX.Element {
   const [isScanning, setIsScanning] = useState(false);
-  const [facing, setFacing] = useState<CameraType>("back");
   const [animationKey, setAnimationKey] = useState(0);
+  
+  // Balance state
+  const [balance, setBalance] = useState<string | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [tokenSymbol, setTokenSymbol] = useState<string>("MESHT");
 
   // Use wallet context
   const {
     scannedAddresses,
     addScannedAddress,
     clearScannedAddresses,
-    removeScannedAddress,
+    userWalletAddress,
   } = useWallet();
+
+  // Use BLE context for network status
+  const { hasInternet } = useBle();
 
   // Reset animation key when tab is focused
   useFocusEffect(
@@ -55,6 +64,48 @@ export default function Scan(): React.JSX.Element {
       setAnimationKey((prev) => prev + 1);
     }, [])
   );
+
+  // Fetch balance when online and wallet address is available
+  useEffect(() => {
+    const loadBalance = async () => {
+      // Only fetch if online and wallet address exists
+      if (!hasInternet || !userWalletAddress) {
+        setBalance(null);
+        setBalanceError(null);
+        return;
+      }
+
+      setIsLoadingBalance(true);
+      setBalanceError(null);
+
+      try {
+        // Fetch token symbol (cache it)
+        const symbol = await getMeshTSymbol();
+        setTokenSymbol(symbol);
+
+        // Fetch balance
+        const tokenBalance = await fetchMeshTBalance(userWalletAddress);
+        setBalance(tokenBalance);
+      } catch (error: any) {
+        console.error("Error loading balance:", error);
+        setBalanceError(error?.message || "Failed to load balance");
+        setBalance(null);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    loadBalance();
+  }, [hasInternet, userWalletAddress]);
+
+  // Format balance for display
+  const formatBalance = (bal: string | null): string => {
+    if (!bal) return "0.00";
+    const num = parseFloat(bal);
+    if (isNaN(num)) return "0.00";
+    // Show up to 6 decimal places, remove trailing zeros
+    return num.toFixed(6).replace(/\.?0+$/, "");
+  };
 
   const isValidWalletAddress = (address: string): boolean => {
     // Basic validation for Ethereum-style addresses
@@ -199,7 +250,7 @@ export default function Scan(): React.JSX.Element {
       <SafeAreaView style={styles.cameraContainer}>
         <CameraView
           style={styles.camera}
-          facing={facing}
+          facing="back"
           onBarcodeScanned={handleBarcodeScanned}
           barcodeScannerSettings={{
             barcodeTypes: ["qr"],
@@ -233,6 +284,55 @@ export default function Scan(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        {/* Balance Display Card */}
+        {userWalletAddress && (
+          <Animated.View
+            key={`balance-${animationKey}`}
+            entering={FadeInDown.delay(50).springify()}
+            style={styles.balanceCard}
+          >
+            <View style={styles.balanceHeader}>
+              <Text style={styles.balanceLabel}>Your Balance</Text>
+              <View style={[
+                styles.statusIndicator,
+                hasInternet ? styles.statusOnline : styles.statusOffline
+              ]}>
+                <Text style={styles.statusText}>
+                  {hasInternet ? "● Online" : "○ Offline"}
+                </Text>
+              </View>
+            </View>
+            
+            {!hasInternet ? (
+              <View style={styles.offlineContainer}>
+                <Text style={styles.offlineText}>📡 Offline</Text>
+                <Text style={styles.offlineSubText}>
+                  Connect to internet to view balance
+                </Text>
+              </View>
+            ) : isLoadingBalance ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator 
+                  size="small" 
+                  color={RetroColors.primary} 
+                />
+                <Text style={styles.loadingText}>Loading balance...</Text>
+              </View>
+            ) : balanceError ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>⚠️ {balanceError}</Text>
+              </View>
+            ) : (
+              <View style={styles.balanceContent}>
+                <Text style={styles.balanceAmount}>
+                  {formatBalance(balance)}
+                </Text>
+                <Text style={styles.balanceSymbol}>{tokenSymbol}</Text>
+              </View>
+            )}
+          </Animated.View>
+        )}
+
         <Animated.Text
           key={`title-${animationKey}`}
           entering={FadeInDown.delay(100).springify()}
@@ -273,7 +373,7 @@ export default function Scan(): React.JSX.Element {
             >
               <Text style={styles.emptyText}>📭 No addresses scanned yet</Text>
               <Text style={styles.emptySubText}>
-                Tap "Start Scanning" to scan your first QR code
+                Tap &quot;Start Scanning&quot; to scan your first QR code
               </Text>
             </Animated.View>
           ) : (
@@ -498,5 +598,118 @@ const styles = StyleSheet.create({
   },
   clearButtonContainer: {
     padding: 4,
+  },
+  balanceCard: {
+    backgroundColor: RetroColors.surface,
+    borderRadius: 8,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 3,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
+  },
+  balanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  balanceLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: RetroColors.textSecondary,
+    textTransform: 'uppercase',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  statusIndicator: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+  },
+  statusOnline: {
+    backgroundColor: '#E8F5E9',
+  },
+  statusOffline: {
+    backgroundColor: '#FFEBEE',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    color: RetroColors.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  balanceContent: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+  },
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+    marginRight: 8,
+  },
+  balanceSymbol: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: RetroColors.primary,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  offlineContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  offlineText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    letterSpacing: 1,
+  },
+  offlineSubText: {
+    fontSize: 12,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    textAlign: "center",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    marginLeft: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  errorContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  errorText: {
+    fontSize: 12,
+    color: RetroColors.primary,
+    fontFamily: 'monospace',
+    textAlign: "center",
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
