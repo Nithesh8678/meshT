@@ -1,9 +1,9 @@
 // Contract configuration constants
 export const CONTRACT_CONFIG = {
   RPC_URL: "https://testnet.evm.nodes.onflow.org",
-  CONTRACT_ADDRESS: "0xc7a5Fd47Bc5725600E03124263056C897fb96b6c",
+  CONTRACT_ADDRESS: "0x6D2c5578f9ab2D83855b85b19eA52Dd81967396c",
   RELAYER_PRIVATE_KEY:
-    "0xa5d69bd2a06efa55f9ca05b121cd0d617e48fdb83940727695812f3de7d70bc3",
+    "cfd4c7154cd0cf56c94d1327812ccb5fa8b9d024b97d649b304eb92b3434ac42",
 };
 
 // Contract ABI for transferWithAuthorization function
