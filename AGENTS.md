@@ -124,7 +124,7 @@ MeshT/
 │   │   ├── transaction.tsx     # Send transaction
 │   │   └── wallet-demo.tsx     # Wallet management
 │   ├── components/             # Reusable UI components
-│   │   ├── NeoBrutalismComponents.tsx  # UI components
+│   │   ├── NeoBrutalismComponents.tsx  # UI **components**
 │   │   └── ui/                 # Base UI components
 │   ├── contexts/               # React Context providers
 │   │   ├── BleContext.tsx      # 🔥 Core BLE mesh networking
