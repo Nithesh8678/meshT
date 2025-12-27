@@ -78,8 +78,33 @@ const MeshScreen = () => {
 
   const renderReceivedMessageCard = (state: MessageState) => {
     const progress = getProgressFor(state);
+    
+    // Try to parse response to show transaction status
+    let transactionStatus: {
+      success?: boolean;
+      error?: string;
+      transactionHash?: string;
+      stage?: string;
+      blockNumber?: number;
+    } | null = null;
+    
+    if (state.isAck && state.isComplete && state.fullMessage) {
+      try {
+        transactionStatus = JSON.parse(state.fullMessage);
+      } catch {
+        // Not JSON, ignore
+      }
+    }
+    
     return (
-      <Card key={`msg-${state.id}`} style={[styles.messageCard]}>
+      <Card 
+        key={`msg-${state.id}`} 
+        style={[
+          styles.messageCard,
+          transactionStatus?.success === false && styles.errorCard,
+          transactionStatus?.success === true && styles.successCard,
+        ]}
+      >
         <Card.Content>
           <View
             style={{
@@ -91,12 +116,62 @@ const MeshScreen = () => {
             <Title style={[styles.messageTitle, { textAlign: 'left' }]}>
               {state.isAck ? 'Response' : 'Request'}
             </Title>
+            {transactionStatus && (
+              <Badge 
+                style={[
+                  transactionStatus.success 
+                    ? styles.successBadge 
+                    : styles.errorBadge
+                ]}
+              >
+                {transactionStatus.success ? '✅ Success' : '❌ Failed'}
+              </Badge>
+            )}
           </View>
 
-          <Paragraph numberOfLines={3}>
-            {state.fullMessage ||
-              (state.isComplete ? '(Decoded)' : '(Incomplete)')}
-          </Paragraph>
+          {transactionStatus ? (
+            <View style={{ marginTop: 8 }}>
+              {transactionStatus.success ? (
+                <View>
+                  <Paragraph style={styles.statusText}>
+                    <Text style={styles.statusLabel}>Transaction Hash:</Text>{' '}
+                    {transactionStatus.transactionHash ? (
+                      <Text style={styles.hashText}>
+                        {transactionStatus.transactionHash.slice(0, 10)}...
+                        {transactionStatus.transactionHash.slice(-8)}
+                      </Text>
+                    ) : (
+                      'N/A'
+                    )}
+                  </Paragraph>
+                  {transactionStatus.blockNumber && (
+                    <Paragraph style={styles.statusText}>
+                      <Text style={styles.statusLabel}>Block:</Text>{' '}
+                      {transactionStatus.blockNumber}
+                    </Paragraph>
+                  )}
+                </View>
+              ) : (
+                <View>
+                  <Paragraph style={[styles.statusText, styles.errorText]}>
+                    <Text style={styles.statusLabel}>Error:</Text>{' '}
+                    {transactionStatus.error || 'Unknown error'}
+                  </Paragraph>
+                  {transactionStatus.stage && (
+                    <Paragraph style={styles.statusText}>
+                      <Text style={styles.statusLabel}>Stage:</Text>{' '}
+                      {transactionStatus.stage}
+                    </Paragraph>
+                  )}
+                </View>
+              )}
+            </View>
+          ) : (
+            <Paragraph numberOfLines={3}>
+              {state.fullMessage ||
+                (state.isComplete ? '(Decoded)' : '(Incomplete)')}
+            </Paragraph>
+          )}
 
           <View style={{ marginTop: 8 }}>
             <View
@@ -113,6 +188,7 @@ const MeshScreen = () => {
             <ProgressBar
               progress={progress.percent / 100}
               style={{ height: 8, borderRadius: 6 }}
+              color={transactionStatus?.success === false ? '#f44336' : undefined}
             />
             <View
               style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}
@@ -314,6 +390,37 @@ const styles = StyleSheet.create({
   chunkMissing: {
     backgroundColor: '#ffe0b2',
     color: '#6a4a00',
+  },
+  successCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  errorCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  successBadge: {
+    backgroundColor: '#4CAF50',
+    color: '#fff',
+  },
+  errorBadge: {
+    backgroundColor: '#f44336',
+    color: '#fff',
+  },
+  statusText: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  statusLabel: {
+    fontWeight: '600',
+    color: '#555',
+  },
+  hashText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+  },
+  errorText: {
+    color: '#f44336',
   },
 });
 
