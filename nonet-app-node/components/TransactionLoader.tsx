@@ -10,12 +10,11 @@ import {
 } from "react-native";
 import { Colors } from "@/constants/theme";
 import { useWallet } from "@/contexts/WalletContext";
-import { useBle, submitTransactionToBlockchain } from "@/contexts/BleContext";
+import { useBle } from "@/contexts/BleContext";
 import { CONTRACT_CONFIG, TransactionPayload } from "@/constants/contracts";
 import { ethers } from "ethers";
 
-// Create EIP-3009 transferWithAuthorization signature using EIP-712 typed data signing
-// The contract uses EIP712._hashTypedDataV4, so we must use EIP-712 signing, not solidityPackedKeccak256
+// Create EIP-3009 transferWithAuthorization signature using ethers.js - exactly matches simpleTransferWithAuthorization.ts
 const createTransferWithAuthorizationSignature = async (
   from: string,
   to: string,
@@ -29,10 +28,10 @@ const createTransferWithAuthorizationSignature = async (
 ): Promise<string> => {
   try {
     console.log(
-      "🔐 Creating EIP-3009 transferWithAuthorization signature using EIP-712 typed data..."
+      "🔐 Creating EIP-3009 transferWithAuthorization signature using ethers.js..."
     );
 
-    // Create wallet from private key
+    // Create wallet from private key (exactly like in simpleTransferWithAuthorization.ts)
     const wallet = new ethers.Wallet(privateKey);
     console.log("Wallet address:", wallet.address);
     console.log("Expected from address:", from);
@@ -44,96 +43,73 @@ const createTransferWithAuthorizationSignature = async (
       );
     }
 
-    // EIP-712 Domain - must match the contract's EIP712 constructor
-    // The contract uses: EIP712(name, "1") where name is the token name
-    const domain = {
-      name: CONTRACT_CONFIG.TOKEN_NAME, // Must match contract deployment name
-      version: CONTRACT_CONFIG.TOKEN_VERSION, // "1" as per contract
-      chainId: chainId,
-      verifyingContract: contractAddress,
-    };
-
-    // EIP-712 Types - must match the contract's TRANSFER_WITH_AUTHORIZATION_TYPEHASH structure
-    const types = {
-      TransferWithAuthorization: [
-        { name: "from", type: "address" },
-        { name: "to", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "validAfter", type: "uint256" },
-        { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "bytes32" },
+    // Create message hash using solidityPackedKeccak256 (exactly like in the script)
+    // This matches: ethers.solidityPackedKeccak256([types], [values])
+    const messageHash = ethers.solidityPackedKeccak256(
+      [
+        "address", // from
+        "address", // to
+        "uint256", // value
+        "uint256", // validAfter
+        "uint256", // validBefore
+        "bytes32", // nonce
+        "address", // contractAddress
+        "uint256", // chainId
       ],
-    };
+      [
+        from,
+        to,
+        value,
+        validAfter,
+        validBefore,
+        nonce,
+        contractAddress,
+        chainId,
+      ]
+    );
 
-    // Message value - ensure nonce is in correct format for EIP-712
-    // For EIP-712 bytes32 type, ethers.js signTypedData expects a hex string
-    // Ensure nonce is a valid 32-byte hex string
-    let nonceValue: string;
-    if (nonce.startsWith("0x")) {
-      // Verify it's exactly 32 bytes (64 hex chars + "0x" = 66 total chars)
-      const nonceBytes = ethers.getBytes(nonce);
-      if (nonceBytes.length !== 32) {
-        throw new Error(`Nonce must be exactly 32 bytes, got ${nonceBytes.length} bytes`);
-      }
-      nonceValue = nonce.toLowerCase(); // Normalize to lowercase
-    } else {
-      // If it's not a hex string, add 0x prefix
-      if (nonce.length !== 64) {
-        throw new Error(`Nonce must be 64 hex characters, got ${nonce.length}`);
-      }
-      nonceValue = "0x" + nonce.toLowerCase();
-    }
-    
-    const transferValue = {
-      from: from.toLowerCase(), // Normalize addresses
-      to: to.toLowerCase(),
-      value: BigInt(value), // Convert to BigInt for proper encoding
-      validAfter: BigInt(validAfter),
-      validBefore: BigInt(validBefore),
-      nonce: nonceValue, // bytes32 as hex string
-    };
-
-    console.log("📝 EIP-712 Domain:", domain);
     console.log("📝 Message parameters:", {
-      from: transferValue.from,
-      to: transferValue.to,
-      value: transferValue.value.toString(),
-      validAfter: transferValue.validAfter.toString(),
-      validBefore: transferValue.validBefore.toString(),
-      nonce: ethers.hexlify(transferValue.nonce),
+      from,
+      to,
+      value,
+      validAfter,
+      validBefore,
+      nonce,
+      contractAddress,
+      chainId,
     });
 
-    // Sign using EIP-712 typed data - this is what the contract expects
-    // The contract uses _hashTypedDataV4 which creates the EIP-712 digest
-    const signature = await wallet.signTypedData(domain, types, transferValue);
+    console.log("🔗 Message Hash (solidityPackedKeccak256):", messageHash);
 
-    console.log("✅ EIP-712 signature created:", {
+    // Sign the message hash (exactly like in the script)
+    // The contract expects an Ethereum signed message, so we need to add the prefix
+    const signature = await wallet.signMessage(ethers.getBytes(messageHash));
+
+    console.log("✅ EIP-3009 signature created using ethers.js:", {
+      messageHash,
       signature,
       signatureLength: signature.length,
     });
 
-    // Verify signature using EIP-712
+    // Verify signature (optional verification step like in the script)
     try {
-      // Recover signer from EIP-712 signature
-      const recoveredSigner = ethers.verifyTypedData(
-        domain,
-        types,
-        transferValue,
+      const recoveredSigner = ethers.verifyMessage(
+        ethers.getBytes(messageHash),
         signature
       );
-      console.log("🔍 EIP-712 Signature verification:", {
+      console.log("🔍 Signature verification:", {
         recoveredSigner,
         expectedSigner: from,
         isValid: recoveredSigner.toLowerCase() === from.toLowerCase(),
       });
     } catch (verifyError) {
-      console.warn("⚠️ EIP-712 signature verification failed:", verifyError);
+      console.warn("⚠️ Signature verification failed:", verifyError);
     }
 
     return signature;
   } catch (error) {
     console.error(
-      "❌ Error creating EIP-712 signature:",
+      "❌ Error creating EIP-3009 signature with ethers.js:",
       error
     );
     throw new Error("Failed to create transferWithAuthorization signature");
@@ -213,7 +189,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
   transactionData,
 }) => {
   const { userWalletAddress, walletData } = useWallet();
-  const { broadcastMessage, masterState, hasInternet } = useBle();
+  const { broadcastMessage, masterState } = useBle();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
@@ -222,8 +198,6 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
   const [shouldPauseFlow, setShouldPauseFlow] = useState(false);
   const [isWaitingForConfirmation, setIsWaitingForConfirmation] =
     useState(false);
-  const [isDirectSubmission, setIsDirectSubmission] = useState(false);
-  const [directSubmissionResponse, setDirectSubmissionResponse] = useState<string | null>(null);
   const [nextStepTimeouts, setNextStepTimeouts] = useState<
     ReturnType<typeof setTimeout>[]
   >([]);
@@ -305,54 +279,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
     startTransactionFlow();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle direct submission responses
-  useEffect(() => {
-    if (isDirectSubmission && directSubmissionResponse) {
-      try {
-        const responseObj = JSON.parse(directSubmissionResponse);
-        
-        if (responseObj.success) {
-          console.log("✅ Direct submission successful - completing transaction");
-          // Skip to final step and complete
-          setCurrentStep(TRANSACTION_STEPS.length - 1);
-          setLoadingMessageIndex(LOADING_MESSAGES.length - 1);
-          
-          // Animate to final step
-          Animated.timing(progressAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: false,
-          }).start();
-          
-          Animated.timing(stepAnimations[TRANSACTION_STEPS.length - 1], {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
-          
-          // Complete after a short delay
-          setTimeout(() => {
-            setIsCompleted(true);
-            setTimeout(() => {
-              onComplete(directSubmissionResponse);
-            }, 1500);
-          }, 800);
-        } else {
-          console.error("❌ Direct submission failed:", responseObj.error);
-          // Show error but still complete the flow
-          setCurrentStep(TRANSACTION_STEPS.length - 1);
-          setIsCompleted(true);
-          setTimeout(() => {
-            onComplete(directSubmissionResponse);
-          }, 1500);
-        }
-      } catch (parseErr) {
-        console.error("❌ Error parsing direct submission response:", parseErr);
-      }
-    }
-  }, [isDirectSubmission, directSubmissionResponse, onComplete, progressAnim, stepAnimations]);
-
-  // Monitor master state for transaction completion (mesh network path)
+  // Monitor master state for transaction completion
   useEffect(() => {
     if (broadcastId && masterState.has(broadcastId)) {
       const state = masterState.get(broadcastId);
@@ -368,13 +295,8 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
     }
   }, [masterState, broadcastId, resumeTransactionFlow]);
 
-  // STRICT Safety check: prevent completion if still waiting for confirmation (mesh network only)
+  // STRICT Safety check: prevent completion if still waiting for confirmation
   useEffect(() => {
-    // Skip safety check for direct submissions
-    if (isDirectSubmission) {
-      return;
-    }
-
     // ALWAYS prevent completion if we're waiting for confirmation OR if we haven't received proper mesh confirmation
     if ((isWaitingForConfirmation || currentStep >= 3) && isCompleted) {
       // Only allow completion if we have a confirmed broadcast state
@@ -395,7 +317,6 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
       }
     }
   }, [
-    isDirectSubmission,
     isWaitingForConfirmation,
     isCompleted,
     currentStep,
@@ -438,24 +359,6 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
       return "Transaction completed successfully!";
     }
 
-    // Direct submission path
-    if (isDirectSubmission) {
-      if (directSubmissionResponse) {
-        try {
-          const responseObj = JSON.parse(directSubmissionResponse);
-          if (responseObj.success) {
-            return "Transaction confirmed on blockchain!";
-          } else {
-            return `Transaction failed: ${responseObj.error || "Unknown error"}`;
-          }
-        } catch {
-          return "Processing transaction response...";
-        }
-      }
-      return "Submitting transaction directly to blockchain...";
-    }
-
-    // Mesh network path
     if (isWaitingForConfirmation || (isBroadcasting && shouldPauseFlow)) {
       if (broadcastId && masterState.has(broadcastId)) {
         const state = masterState.get(broadcastId);
@@ -471,7 +374,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
     }
 
     // If we've reached the gateway step, always show waiting message
-    if (currentStep >= 3 && !hasInternet) {
+    if (currentStep >= 3) {
       return "Found gateway device, waiting for mesh network confirmation...";
     }
 
@@ -512,8 +415,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
         throw new Error("Missing transaction data or wallet address");
       }
 
-      console.log("🔐 Creating transaction payload...");
-      console.log("🌐 Device has internet:", hasInternet);
+      console.log("🔐 Creating transaction payload for mesh network...");
 
       // Generate transaction parameters similar to simpleSubmitTxnOnChain.ts
       const currentTime = Math.floor(Date.now() / 1000);
@@ -573,79 +475,34 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
         value: transactionPayload.parameters.value,
       });
 
-      const payloadString = JSON.stringify(transactionPayload);
+      // Start broadcasting the transaction payload
+      try {
+        const payloadString = JSON.stringify(transactionPayload);
+        await broadcastMessage(payloadString);
+        setIsBroadcasting(true);
+        setShouldPauseFlow(true); // Pause the flow here
+        setIsWaitingForConfirmation(true); // Set waiting for confirmation
 
-      // Check internet connectivity and choose submission path
-      if (hasInternet) {
-        // DIRECT SUBMISSION PATH: Device has internet, submit directly
-        console.log("🚀 Device has internet - submitting directly to blockchain...");
-        setIsDirectSubmission(true);
-        setShouldPauseFlow(false); // Don't pause for mesh steps
-        setIsWaitingForConfirmation(false);
+        // Find the broadcast ID from the master state
+        // Since broadcastMessage creates a new entry, we need to find the latest one
+        const states = Array.from(masterState.entries());
+        const latestState = states.find(
+          ([_, state]) => state.fullMessage === payloadString && !state.isAck
+        );
 
-        try {
-          // Directly submit to blockchain
-          const response = await submitTransactionToBlockchain(payloadString);
-          setDirectSubmissionResponse(response);
-          console.log("✅ Direct submission response received:", response);
-
-          // Parse and handle response
-          try {
-            const responseObj = JSON.parse(response);
-            if (responseObj.success) {
-              console.log("✅ Transaction successful!");
-              console.log("Transaction Hash:", responseObj.transactionHash);
-              // The flow will handle completion in the UI update logic
-            } else {
-              console.error("❌ Transaction failed:", responseObj.error);
-              // Error will be handled in the response handler
-            }
-          } catch (parseErr) {
-            console.warn("⚠️ Could not parse direct submission response:", parseErr);
-          }
-        } catch (error) {
-          console.error("❌ Error in direct submission:", error);
-          // Create error response
-          const errorResponse = JSON.stringify({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: Date.now(),
-            stage: "direct_submission",
-          });
-          setDirectSubmissionResponse(errorResponse);
-        }
-      } else {
-        // MESH NETWORK PATH: No internet, broadcast via BLE mesh
-        console.log("📡 Device has no internet - broadcasting via BLE mesh network...");
-        setIsDirectSubmission(false);
-        
-        try {
-          await broadcastMessage(payloadString);
-          setIsBroadcasting(true);
-          setShouldPauseFlow(true); // Pause the flow here for mesh network
-          setIsWaitingForConfirmation(true); // Set waiting for confirmation
-
-          // Find the broadcast ID from the master state
-          // Since broadcastMessage creates a new entry, we need to find the latest one
-          const states = Array.from(masterState.entries());
-          const latestState = states.find(
-            ([_, state]) => state.fullMessage === payloadString && !state.isAck
+        if (latestState) {
+          setBroadcastId(latestState[0]);
+          console.log(
+            "🚀 Started broadcasting transaction with ID:",
+            latestState[0]
           );
-
-          if (latestState) {
-            setBroadcastId(latestState[0]);
-            console.log(
-              "🚀 Started broadcasting transaction with ID:",
-              latestState[0]
-            );
-          }
-        } catch (error) {
-          console.error("❌ Error broadcasting transaction payload:", error);
-          // Reset flags on error
-          setIsBroadcasting(false);
-          setShouldPauseFlow(false);
-          setIsWaitingForConfirmation(false);
         }
+      } catch (error) {
+        console.error("❌ Error broadcasting transaction payload:", error);
+        // Reset flags on error
+        setIsBroadcasting(false);
+        setShouldPauseFlow(false);
+        setIsWaitingForConfirmation(false);
       }
     } catch (error) {
       console.error("❌ Error signing transaction:", error);
@@ -657,17 +514,10 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     TRANSACTION_STEPS.forEach((step, index) => {
-      // Skip mesh network steps (1, 2, 3) if device has internet
-      // Steps: 0=Preparing, 1=Scanning, 2=Hopping, 3=Finding Gateway, 4=Broadcasting, 5=Confirmed
-      if (hasInternet && (index === 1 || index === 2 || index === 3)) {
-        // Skip "Scanning for Nearby Devices" (1), "Hopping Through Network" (2), and "Finding Internet Gateway" (3)
-        return; // Skip these steps entirely - don't schedule timeouts for them
-      }
-
       const timeout = setTimeout(async () => {
-        // For mesh network path: pause at gateway step if waiting for confirmation
-        if (!hasInternet && (shouldPauseFlow || isWaitingForConfirmation) && index >= 3) {
-          // Stop at "Finding Internet Gateway" step (index 3) and wait for confirmation (mesh network only)
+        // Check if we should pause the flow (happens at gateway step) or waiting for confirmation
+        if ((shouldPauseFlow || isWaitingForConfirmation) && index >= 3) {
+          // Stop at "Finding Internet Gateway" step (index 3) and wait for confirmation
           console.log(
             "🔄 Pausing transaction flow at step:",
             step.title,
@@ -688,33 +538,18 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
           await handleTransactionSigning();
         }
 
-        // If this is the "Finding Internet Gateway" step and we're using mesh network, pause here
-        if (!hasInternet && index === 3) {
+        // If this is the "Finding Internet Gateway" step, pause here and wait for confirmation
+        if (index === 3) {
           setIsWaitingForConfirmation(true);
           setShouldPauseFlow(true);
           console.log(
             "🌐 Reached Finding Internet Gateway step - waiting for confirmation..."
           );
         }
-
-        // For direct submission, after preparing (step 0), quickly progress to broadcasting (step 4)
-        if (hasInternet && index === 0) {
-          // Wait a moment for transaction signing to complete, then jump to broadcasting
-          setTimeout(() => {
-            if (isDirectSubmission) {
-              setCurrentStep(4); // Broadcasting Transaction
-              animateStep(4);
-              setLoadingMessageIndex(4);
-            }
-          }, 1500);
-        }
       }, totalDuration);
 
       timeouts.push(timeout);
-      // Only add duration if we're not skipping this step
-      if (!(hasInternet && (index === 1 || index === 2 || index === 3))) {
-        totalDuration += step.duration;
-      }
+      totalDuration += step.duration;
     });
 
     // Store timeouts for cleanup
@@ -722,7 +557,6 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
 
     // REMOVED: Automatic completion logic - now always waits for confirmation
     // The completion will ONLY be handled by the master state monitor after receiving confirmation
-    // OR by the direct submission response handler
   };
 
   const animateStep = (stepIndex: number) => {
