@@ -1,17 +1,17 @@
-# 🌐 NONET - Decentralized Mesh Network for Offline Blockchain Transactions
+# 🌐 meshT - Decentralized Mesh Network for Offline Blockchain Transactions
 
 > **Revolutionary application enabling cryptocurrency transactions through Bluetooth Low Energy mesh networking - no internet required!**
 
-[![React Native](https://img.shields.io/badge/React%20Native-0.81.4-blue.svg)](https://reactnative.dev/)
+[![React Native](https://img.shields.io/badge/React%20Native-0. 81.4-blue.svg)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-~54.0.10-black.svg)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-~5.9.2-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 🚀 What is NONET?
+## 🚀 What is meshT?
 
-NONET is a groundbreaking mobile application that enables **offline cryptocurrency transactions** using Bluetooth Low Energy (BLE) mesh networking. When you don't have internet access, NONET creates a peer-to-peer network with nearby devices, allowing your transaction to "hop" through multiple devices until it reaches someone with internet connectivity who can broadcast it to the blockchain.
+meshT is a groundbreaking mobile application that enables **offline cryptocurrency transactions** using Bluetooth Low Energy (BLE) mesh networking. When you don't have internet access, meshT creates a decentralized network allowing cryptocurrency transactions to propagate through nearby devices until reaching an internet gateway.
 
 ### ⚡ Key Features
 
@@ -45,8 +45,8 @@ Android Studio (for Android)
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/nonet.git
-   cd nonet
+   git clone https://github.com/Nithesh8678/meshT.git
+   cd meshT
    ```
 
 2. **Navigate to App Directory**
@@ -114,12 +114,12 @@ The app requires the following permissions to function:
 ## 📁 Repository Structure
 
 ```
-nonet/
+meshT/
 ├── 📱 nonet-app-node/           # Main React Native application
 │   ├── app/                     # Expo Router pages
 │   │   ├── (tabs)/             # Tab-based navigation
 │   │   │   ├── index.tsx       # Home/Dashboard
-│   │   │   ├── mesh.tsx        # Mesh network status
+│   │   │   ├── mesh. tsx        # Mesh network status
 │   │   │   └── show.tsx        # Transaction history
 │   │   ├── transaction.tsx     # Send transaction
 │   │   └── wallet-demo.tsx     # Wallet management
@@ -146,7 +146,7 @@ nonet/
 
 #### `contexts/BleContext.tsx`
 
-The heart of the mesh networking system. Manages:
+The heart of the mesh networking system.  Manages: 
 
 - BLE device scanning and advertising
 - Packet fragmentation and reassembly
@@ -155,7 +155,7 @@ The heart of the mesh networking system. Manages:
 
 #### `utils/bleUtils.ts`
 
-Low-level BLE protocol implementation:
+Low-level BLE protocol implementation: 
 
 - Packet encoding/decoding
 - Message fragmentation algorithm
@@ -175,7 +175,7 @@ Blockchain integration layer:
 
 ### How Mesh Networking Works
 
-NONET implements a custom protocol over Bluetooth Low Energy (BLE) to create a mesh network:
+meshT implements a custom protocol over Bluetooth Low Energy (BLE) to create a mesh network:
 
 #### 1. **Packet Structure**
 
@@ -212,14 +212,14 @@ Each device maintains a master state of all active messages:
 
 ```json
 {
-    "packet.id": {
+    "packet. id": {
         "ack_mode": false,
         "is_complete": false,
         "number_of_chunks": 10,
         "data": {
             1: "binary_chunk_1",
             2: "binary_chunk_2",
-            ...
+            ... 
         }
     }
 }
@@ -227,7 +227,7 @@ Each device maintains a master state of all active messages:
 
 ### BLE Protocol Flow
 
-1. **Message Creation**: Transaction data is encoded and fragmented
+1. **Message Creation**:  Transaction data is encoded and fragmented
 2. **Broadcasting**: Fragments are advertised via BLE GAP
 3. **Relay Propagation**: Nearby devices receive and re-broadcast
 4. **Gateway Processing**: Internet-connected device submits to blockchain
@@ -243,19 +243,19 @@ Each device maintains a master state of all active messages:
 
 #### Smart Contract Addresses
 
-- **Hedera Testnet**: [`0xc6C46289fA5FdC583Cdb5e5C2900af4333423787`](https://hashscan.io/testnet/contract/0.0.6915692)
+- **Hedera Testnet**:  [`0xc6C46289fA5FdC583Cdb5e5C2900af4333423787`](https://hashscan.io/testnet/contract/0.0.6915692)
 - **Flow Testnet**: [`0xc7a5Fd47Bc5725600E03124263056C897fb96b6c`](https://evm-testnet.flowscan.io/address/0xc7a5Fd47Bc5725600E03124263056C897fb96b6c)
 
 - Hedera Testnet: [0xc7a5fd47bc5725600e03124263056c897fb96b6c](https://hashscan.io/testnet/contract/0.0.6917378)
-- Flow Testnet: [0xc7a5Fd47Bc5725600E03124263056C897fb96b6c](https://evm-testnet.flowscan.io/address/0xc7a5Fd47Bc5725600E03124263056C897fb96b6c)
+- Flow Testnet: [0xc7a5Fd47Bc5725600E03124263056C897fb96b6c](https://evm-testnet.flowscan. io/address/0xc7a5Fd47Bc5725600E03124263056C897fb96b6c)
 
 - Flow Mainnet: 0xD50C49eD8a5bd17d6C6E2522d75300d42A9746e5
 
-- Nonet tokens: [https://evm.flowscan.io/token/0xD50C49eD8a5bd17d6C6E2522d75300d42A9746e5](https://evm.flowscan.io/token/0xD50C49eD8a5bd17d6C6E2522d75300d42A9746e5)
+- meshT tokens: [https://evm.flowscan.io/token/0xD50C49eD8a5bd17d6C6E2522d75300d42A9746e5](https://evm.flowscan.io/token/0xD50C49eD8a5bd17d6C6E2522d75300d42A9746e5)
 
 #### EIP-3009 Meta-Transactions
 
-NONET implements EIP-3009 for gasless transactions:
+meshT implements EIP-3009 for gasless transactions:
 
 ```solidity
 function transferWithAuthorization(
@@ -293,7 +293,7 @@ function transferWithAuthorization(
 ### 3. **Mesh Broadcasting**
 
 - Transaction fragments broadcast via BLE
-- Nearby NONET devices automatically relay
+- Nearby meshT devices automatically relay
 - Continues until reaching internet-connected device
 
 ### 4. **Blockchain Submission**
@@ -322,7 +322,7 @@ function transferWithAuthorization(
 
 - **Non-Custodial**: Users control private keys
 - **Local Storage**: Keys encrypted on device
-- **Pseudonymous**: Addresses don't reveal identity
+- **Pseudonymous**:  Addresses don't reveal identity
 
 ---
 
@@ -338,7 +338,7 @@ The BLE protocol can be modified in `utils/bleUtils.ts`:
 
 ### UI Customization
 
-NONET uses a modern design system (`components/NeoBrutalismComponents.tsx`):
+meshT uses a modern design system (`components/NeoBrutalismComponents.tsx`):
 
 - Clean typography
 - Intuitive color scheme
@@ -371,7 +371,7 @@ npm test
 ## 🤝 Contributing
 
 1. **Fork the Repository**
-2. **Create Feature Branch**: `git checkout -b feature/amazing-feature`
+2. **Create Feature Branch**:  `git checkout -b feature/amazing-feature`
 3. **Commit Changes**: `git commit -m 'Add amazing feature'`
 4. **Push to Branch**: `git push origin feature/amazing-feature`
 5. **Open Pull Request**
@@ -389,7 +389,7 @@ npm test
 
 ### BLE Transmission
 
-- **Advertisement Interval**: 250ms per packet
+- **Advertisement Interval**:  250ms per packet
 - **Data Rate**: ~32 bytes/second per connection
 - **Range**: ~100 meters in open space
 - **Concurrent Connections**: Device-dependent
