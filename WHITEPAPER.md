@@ -52,7 +52,7 @@ NONET operates as a decentralized mesh network where each node can function as:
 ┌─────────────────────────────────────┐
 │        Application Layer            │ ← Transaction Creation/Validation
 ├─────────────────────────────────────┤
-│        NONET Protocol Layer         │ ← Packet Assembly/Fragmentation
+│        MESHT Protocol Layer         │ ← Packet Assembly/Fragmentation
 ├─────────────────────────────────────┤
 │        BLE Transport Layer          │ ← Bluetooth Low Energy GAP
 ├─────────────────────────────────────┤

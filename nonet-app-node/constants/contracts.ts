@@ -2,8 +2,10 @@
 export const CONTRACT_CONFIG = {
   RPC_URL: "https://testnet.evm.nodes.onflow.org",
   CONTRACT_ADDRESS: "0x6D2c5578f9ab2D83855b85b19eA52Dd81967396c",
+  // RELAYER_PRIVATE_KEY:
+  //   "cfd4c7154cd0cf56c94d1327812ccb5fa8b9d024b97d649b304eb92b3434ac42",
   RELAYER_PRIVATE_KEY:
-    "cfd4c7154cd0cf56c94d1327812ccb5fa8b9d024b97d649b304eb92b3434ac42",
+    "0xc6bf5f1e1b3a6e76cb21ec9e165a50a3f765b0c822795b0f68783caffb044694",
 };
 
 // Contract ABI for transferWithAuthorization function
