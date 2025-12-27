@@ -7,9 +7,20 @@ import {
   FlatList,
   Alert,
   SafeAreaView,
+  Pressable,
 } from "react-native";
 import { CameraView, CameraType } from "expo-camera";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useWallet, ScannedAddress } from "@/contexts/WalletContext";
 
 // Retro Color Palette - matching Wallet and Mesh pages
@@ -28,6 +39,7 @@ const RetroColors = {
 export default function Scan(): React.JSX.Element {
   const [isScanning, setIsScanning] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
+  const [animationKey, setAnimationKey] = useState(0);
 
   // Use wallet context
   const {
@@ -36,6 +48,13 @@ export default function Scan(): React.JSX.Element {
     clearScannedAddresses,
     removeScannedAddress,
   } = useWallet();
+
+  // Reset animation key when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setAnimationKey((prev) => prev + 1);
+    }, [])
+  );
 
   const isValidWalletAddress = (address: string): boolean => {
     // Basic validation for Ethereum-style addresses
@@ -79,8 +98,73 @@ export default function Scan(): React.JSX.Element {
     );
   };
 
-  const renderAddressItem = ({ item }: { item: ScannedAddress }) => (
-    <View style={styles.addressItem}>
+  // Animated Button Component with Popup Effect
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+  const AnimatedButton = ({
+    onPress,
+    style,
+    children,
+    disabled = false,
+  }: any) => {
+    const scale = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const shadowElevation = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scale: scale.value },
+          { translateY: translateY.value }
+        ],
+        elevation: shadowElevation.value,
+        shadowColor: RetroColors.border,
+        shadowOpacity: shadowElevation.value > 0 ? 1 : 0.3,
+        shadowOffset: { 
+          width: 0, 
+          height: shadowElevation.value > 0 ? 6 : 3 
+        },
+        shadowRadius: shadowElevation.value > 0 ? 8 : 0,
+      };
+    });
+
+    const handlePressIn = () => {
+      if (!disabled) {
+        // Popup effect: scale up and lift - more pronounced
+        scale.value = withSpring(1.08, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(-6, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(12, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    const handlePressOut = () => {
+      if (!disabled) {
+        // Return to normal
+        scale.value = withSpring(1, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(0, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(0, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[style, animatedStyle]}
+      >
+        {children}
+      </AnimatedPressable>
+    );
+  };
+
+  const renderAddressItem = ({ item, index }: { item: ScannedAddress; index: number }) => (
+    <Animated.View
+      key={`${item.id}-${animationKey}`}
+      entering={FadeInDown.delay(index * 50).springify()}
+      style={styles.addressItem}
+    >
       <View style={styles.addressInfo}>
         <Text
           style={styles.addressText}
@@ -93,18 +177,18 @@ export default function Scan(): React.JSX.Element {
           {item.timestamp.toLocaleString()}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.sendButton}
+      <AnimatedButton
         onPress={() => {
           router.push({
             pathname: "/transaction",
             params: { toAddress: item.address },
           });
         }}
+        style={styles.sendButton}
       >
         <Text style={styles.sendButtonText}>Send</Text>
-      </TouchableOpacity>
-    </View>
+      </AnimatedButton>
+    </Animated.View>
   );
 
   // Camera permissions are now handled at wallet creation level
@@ -122,16 +206,24 @@ export default function Scan(): React.JSX.Element {
           }}
         >
           <View style={styles.cameraOverlay}>
-            <View style={styles.scanFrame} />
-            <Text style={styles.scanInstruction}>
-              Point your camera at a QR code containing a wallet address
-            </Text>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setIsScanning(false)}
+            <Animated.View
+              entering={FadeIn.delay(200).springify()}
+              style={styles.scanFrame}
+            />
+            <Animated.Text
+              entering={FadeInUp.delay(300).springify()}
+              style={styles.scanInstruction}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+              Point your camera at a QR code containing a wallet address
+            </Animated.Text>
+            <Animated.View entering={FadeInUp.delay(400).springify()}>
+              <AnimatedButton
+                onPress={() => setIsScanning(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </AnimatedButton>
+            </Animated.View>
           </View>
         </CameraView>
       </SafeAreaView>
@@ -141,44 +233,59 @@ export default function Scan(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>QR Code Scanner</Text>
-
-        <TouchableOpacity
-          style={styles.scanButton}
-          onPress={() => setIsScanning(true)}
+        <Animated.Text
+          key={`title-${animationKey}`}
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.title}
         >
-          <Text style={styles.scanButtonText}>📷 Start Scanning</Text>
-        </TouchableOpacity>
+          QR Code Scanner
+        </Animated.Text>
 
-        <View style={styles.addressesSection}>
+        <Animated.View entering={FadeInUp.delay(200).springify()}>
+          <AnimatedButton
+            onPress={() => setIsScanning(true)}
+            style={styles.scanButton}
+          >
+            <Text style={styles.scanButtonText}>📷 Start Scanning</Text>
+          </AnimatedButton>
+        </Animated.View>
+
+        <Animated.View
+          key={`addresses-${animationKey}`}
+          entering={FadeInUp.delay(300).springify()}
+          style={styles.addressesSection}
+        >
           <View style={styles.addressesHeader}>
             <Text style={styles.addressesTitle}>
               Scanned Addresses ({scannedAddresses.length})
             </Text>
             {scannedAddresses.length > 0 && (
-              <TouchableOpacity onPress={clearAddresses}>
+              <AnimatedButton onPress={clearAddresses} style={styles.clearButtonContainer}>
                 <Text style={styles.clearText}>Clear All</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
             )}
           </View>
 
           {scannedAddresses.length === 0 ? (
-            <View style={styles.emptyState}>
+            <Animated.View
+              entering={FadeIn.delay(400)}
+              style={styles.emptyState}
+            >
               <Text style={styles.emptyText}>📭 No addresses scanned yet</Text>
               <Text style={styles.emptySubText}>
                 Tap "Start Scanning" to scan your first QR code
               </Text>
-            </View>
+            </Animated.View>
           ) : (
             <FlatList
               data={scannedAddresses}
-              renderItem={renderAddressItem}
+              renderItem={({ item, index }) => renderAddressItem({ item, index })}
               keyExtractor={(item) => item.id}
               style={styles.addressesList}
               showsVerticalScrollIndicator={false}
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -388,5 +495,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: 'monospace',
     paddingHorizontal: 20,
+  },
+  clearButtonContainer: {
+    padding: 4,
   },
 });

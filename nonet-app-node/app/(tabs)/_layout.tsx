@@ -32,15 +32,16 @@ export default function TabLayout() {
         tabBarStyle: { 
           backgroundColor: WarmRetroColors.sidebar,
           borderTopWidth: 0,
-          paddingTop: Platform.OS === 'android' ? statusBarHeight + 12 : 12,
-          height: Platform.OS === 'android' ? 75 + statusBarHeight : 75,
-          paddingBottom: 12,
-          // Soft shadow for depth
+          paddingTop: Platform.OS === 'android' ? statusBarHeight + 16 : 16,
+          height: Platform.OS === 'android' ? 85 + statusBarHeight : 85,
+          paddingBottom: 16,
+          paddingHorizontal: 8,
+          // Enhanced shadow for depth and animation visibility
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          elevation: 5,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -50,9 +51,15 @@ export default function TabLayout() {
           marginTop: 6,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
-          borderRadius: 12,
-          marginHorizontal: 4,
+          paddingVertical: 8,
+          borderRadius: 16,
+          marginHorizontal: 6,
+          marginVertical: 4,
+          minHeight: 60,
+          justifyContent: 'center',
+          alignItems: 'center',
+          // Add space for animation lift effect
+          transform: [{ translateY: 0 }],
         },
         tabBarActiveBackgroundColor: WarmRetroColors.background,
         headerShown: false,

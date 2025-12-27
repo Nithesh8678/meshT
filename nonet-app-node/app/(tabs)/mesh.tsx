@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Alert, View, StyleSheet, ScrollView, TouchableOpacity, TextInput as RNTextInput } from 'react-native';
+import { Alert, View, StyleSheet, ScrollView, TouchableOpacity, TextInput as RNTextInput, Pressable } from 'react-native';
+import { useFocusEffect } from "@react-navigation/native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { Text } from 'react-native-paper';
 import { useBle } from '@/contexts/BleContext';
 import { MessageState } from '@/utils/bleUtils';
@@ -23,6 +34,7 @@ const RetroColors = {
 
 const MeshScreen = () => {
   const [message, setMessage] = useState('');
+  const [animationKey, setAnimationKey] = useState(0);
 
   const {
     isBroadcasting,
@@ -35,6 +47,69 @@ const MeshScreen = () => {
     getCurrentBroadcastInfo,
     getProgressFor,
   } = useBle();
+
+  // Reset animation key when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setAnimationKey((prev) => prev + 1);
+    }, [])
+  );
+
+  // Animated Button Component with Popup Effect
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+  const AnimatedButton = ({ onPress, style, children, disabled = false }: any) => {
+    const scale = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const shadowElevation = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scale: scale.value },
+          { translateY: translateY.value }
+        ],
+        elevation: shadowElevation.value,
+        shadowColor: RetroColors.border,
+        shadowOpacity: shadowElevation.value > 0 ? 1 : 0.3,
+        shadowOffset: { 
+          width: 0, 
+          height: shadowElevation.value > 0 ? 6 : 3 
+        },
+        shadowRadius: shadowElevation.value > 0 ? 8 : 0,
+      };
+    });
+
+    const handlePressIn = () => {
+      if (!disabled) {
+        // Popup effect: scale up and lift - more pronounced
+        scale.value = withSpring(1.08, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(-6, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(12, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    const handlePressOut = () => {
+      if (!disabled) {
+        // Return to normal
+        scale.value = withSpring(1, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(0, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(0, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[style, animatedStyle]}
+      >
+        {children}
+      </AnimatedPressable>
+    );
+  };
 
   const handleStartUserBroadcast = async () => {
     try {
@@ -67,10 +142,14 @@ const MeshScreen = () => {
     );
   };
 
-  const renderReceivedMessageCard = (state: MessageState) => {
+  const renderReceivedMessageCard = (state: MessageState, index: number) => {
     const progress = getProgressFor(state);
     return (
-      <View key={`msg-${state.id}`} style={styles.messageCard}>
+      <Animated.View
+        key={`msg-${state.id}-${animationKey}`}
+        entering={FadeInDown.delay(index * 50).springify()}
+        style={styles.messageCard}
+      >
         <View style={styles.messageHeader}>
           <Text style={styles.messageTitle}>
             {state.isAck ? '↪ Response' : '→ Request'}
@@ -111,7 +190,7 @@ const MeshScreen = () => {
             })}
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -122,81 +201,112 @@ const MeshScreen = () => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         {/* Header Section */}
-        <View style={styles.headerSection}>
+        <Animated.View
+          key={`header-${animationKey}`}
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.headerSection}
+        >
           <Text style={styles.mainTitle}>Mesh Node</Text>
           
-          <View style={styles.statusContainer}>
+          <Animated.View
+            entering={ZoomIn.delay(200).springify()}
+            style={styles.statusContainer}
+          >
             <Text style={styles.statusLabel}>
               {hasInternet ? '📡 Online' : '📶 BLE Mesh'}
             </Text>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
 
         {/* Broadcast Section */}
-        <View style={styles.section}>
+        <Animated.View
+          key={`broadcast-${animationKey}`}
+          entering={FadeInUp.delay(300).springify()}
+          style={styles.section}
+        >
           <Text style={styles.sectionTitle}>Current Broadcast</Text>
           
-          <View style={styles.broadcastStatusBox}>
+          <Animated.View
+            entering={FadeIn.delay(400).springify()}
+            style={styles.broadcastStatusBox}
+          >
             <Text style={styles.broadcastLabel}>Broadcasting:</Text>
             <Text style={styles.broadcastText}>
               {isBroadcasting && currentBroadcast.text
                 ? `🔊 ${currentBroadcast.text}`
                 : '— not broadcasting —'}
             </Text>
-          </View>
+          </Animated.View>
 
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => {
-              if (isBroadcasting) stopBroadcasting();
-              else startBroadcasting();
-            }}
-          >
-            <Text style={styles.controlButtonText}>
-              {isBroadcasting ? '⏸ Pause Broadcast' : '▶ Start Broadcast'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <Animated.View entering={FadeInUp.delay(500).springify()}>
+            <AnimatedButton
+              onPress={() => {
+                if (isBroadcasting) stopBroadcasting();
+                else startBroadcasting();
+              }}
+              style={styles.controlButton}
+            >
+              <Text style={styles.controlButtonText}>
+                {isBroadcasting ? '⏸ Pause Broadcast' : '▶ Start Broadcast'}
+              </Text>
+            </AnimatedButton>
+          </Animated.View>
+        </Animated.View>
 
         {/* New Message Section */}
-        <View style={styles.section}>
+        <Animated.View
+          key={`message-${animationKey}`}
+          entering={FadeInUp.delay(400).springify()}
+          style={styles.section}
+        >
           <Text style={styles.sectionTitle}>Broadcast New Message</Text>
           
-          <RNTextInput
-            style={styles.textInput}
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Enter message to broadcast..."
-            placeholderTextColor={RetroColors.textSecondary}
-            multiline
-          />
+          <Animated.View entering={FadeIn.delay(500).springify()}>
+            <RNTextInput
+              style={styles.textInput}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Enter message to broadcast..."
+              placeholderTextColor={RetroColors.textSecondary}
+              multiline
+            />
+          </Animated.View>
 
-          <TouchableOpacity
-            style={[styles.broadcastButton, !message.trim() && styles.buttonDisabled]}
-            onPress={handleStartUserBroadcast}
-            disabled={!message.trim()}
-          >
-            <Text style={styles.buttonText}>Broadcast Message</Text>
-          </TouchableOpacity>
-        </View>
+          <Animated.View entering={FadeInUp.delay(600).springify()}>
+            <AnimatedButton
+              onPress={handleStartUserBroadcast}
+              disabled={!message.trim()}
+              style={[styles.broadcastButton, !message.trim() && styles.buttonDisabled]}
+            >
+              <Text style={styles.buttonText}>Broadcast Message</Text>
+            </AnimatedButton>
+          </Animated.View>
+        </Animated.View>
 
         {/* Network Messages Section */}
-        <View style={styles.section}>
+        <Animated.View
+          key={`network-${animationKey}`}
+          entering={FadeInUp.delay(500).springify()}
+          style={styles.section}
+        >
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Network Messages</Text>
-            <TouchableOpacity onPress={handleClearEverythingAndStop}>
+            <AnimatedButton onPress={handleClearEverythingAndStop} style={styles.clearButtonContainer}>
               <Text style={styles.clearButton}>Clear</Text>
-            </TouchableOpacity>
+            </AnimatedButton>
           </View>
 
           {allMessages.length === 0 ? (
-            <View style={styles.emptyState}>
+            <Animated.View
+              entering={FadeIn.delay(600)}
+              style={styles.emptyState}
+            >
               <Text style={styles.emptyStateText}>👂 Listening for messages...</Text>
-            </View>
+            </Animated.View>
           ) : (
-            allMessages.map((msg) => renderReceivedMessageCard(msg))
+            allMessages.map((msg, index) => renderReceivedMessageCard(msg, index))
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -263,6 +373,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 15,
+  },
+  clearButtonContainer: {
+    padding: 4,
   },
   clearButton: {
     fontSize: 13,
