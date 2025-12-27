@@ -10,9 +10,9 @@
     "newArchEnabled": true,
     "android": {
       "package": "com.nonet.app",
-      "compileSdkVersion": 34,
+      "compileSdkVersion": 35,
       "targetSdkVersion": 34,
-      "minSdkVersion": 21,
+      "minSdkVersion": 24,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -20,7 +20,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -28,6 +32,7 @@
     },
     "plugins": [
       "./plugins/withBlePermissions",
+      "./plugins/withAndroidSdkVersion",
       "expo-router",
       [
         "expo-camera",
@@ -55,7 +60,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c94f2cc8-cacd-4b45-8561-15d6bb19481f"
+        "projectId": "d1b11e8d-c7ea-48a9-aceb-cde2b8035876"
       }
     },
     "ios": {
