@@ -33,9 +33,9 @@ export default function WelcomePage(): React.JSX.Element {
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
 
   useEffect(() => {
-    // Check if user already has a wallet and redirect to tabs
+    // Check if user already has a wallet and redirect to about page
     if (isLoggedIn) {
-      router.replace("/(tabs)");
+      router.replace("/about");
     }
   }, [isLoggedIn]);
 
@@ -105,9 +105,9 @@ export default function WelcomePage(): React.JSX.Element {
       console.log("🔐 Creating wallet...");
       await createWallet(onWalletCreated);
 
-      console.log("✅ Wallet created, navigating to app...");
-      // Navigate to main app
-      router.replace("/(tabs)");
+      console.log("✅ Wallet created, navigating to about page...");
+      // Navigate to about page first
+      router.replace("/about");
     } catch (error) {
       console.error("❌ Error creating wallet:", error);
       Alert.alert("Error", "Failed to create wallet. Please try again.", [

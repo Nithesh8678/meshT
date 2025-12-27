@@ -12,8 +12,8 @@ export default function IndexPage(): React.JSX.Element {
     // Small delay to ensure wallet context is loaded
     const timer = setTimeout(() => {
       if (isLoggedIn) {
-        // User has a wallet, go directly to tabs
-        router.replace("/(tabs)");
+        // User has a wallet, show about page first
+        router.replace("/about");
       } else {
         // User doesn't have a wallet, show welcome page
         router.replace("/welcome");
