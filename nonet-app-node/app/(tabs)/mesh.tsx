@@ -1,37 +1,41 @@
 import React, { useState } from 'react';
-import { Alert, View, StyleSheet, ScrollView } from 'react-native';
-import {
-  Provider as PaperProvider,
-  DefaultTheme,
-  Text,
-  TextInput,
-  Button,
-  Card,
-  Title,
-  Paragraph,
-  Badge,
-  Surface,
-  ProgressBar,
-  Icon,
-  IconButton,
-} from 'react-native-paper';
+import { Alert, View, StyleSheet, ScrollView, TouchableOpacity, TextInput as RNTextInput, Pressable } from 'react-native';
+import { useFocusEffect } from "@react-navigation/native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import { Text } from 'react-native-paper';
 import { useBle } from '@/contexts/BleContext';
 import { MessageState } from '@/utils/bleUtils';
 
-// --- Theme ---
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#2196F3',
-    accent: '#FF5722',
-  },
+// Retro Color Palette - matching Wallet page
+const RetroColors = {
+  background: '#FFF8DC', // Cornsilk
+  surface: '#FAEBD7', // Antique White
+  primary: '#FF6B35', // Retro Orange
+  secondary: '#D2691E', // Chocolate
+  accent: '#DAA520', // Goldenrod
+  text: '#3E2723', // Dark Brown
+  textSecondary: '#6D4C41', // Medium Brown
+  border: '#8B4513', // Saddle Brown
+  shadow: 'rgba(139, 69, 19, 0.3)',
+  success: '#2E7D32', // Dark Green
+  successLight: '#c8e6c9',
+  warning: '#F57C00', // Orange
+  warningLight: '#ffe0b2',
 };
 
 const MeshScreen = () => {
   const [message, setMessage] = useState('');
+  const [animationKey, setAnimationKey] = useState(0);
 
-  // Use the global BLE context
   const {
     isBroadcasting,
     hasInternet,
@@ -43,6 +47,69 @@ const MeshScreen = () => {
     getCurrentBroadcastInfo,
     getProgressFor,
   } = useBle();
+
+  // Reset animation key when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setAnimationKey((prev) => prev + 1);
+    }, [])
+  );
+
+  // Animated Button Component with Popup Effect
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+  const AnimatedButton = ({ onPress, style, children, disabled = false }: any) => {
+    const scale = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const shadowElevation = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scale: scale.value },
+          { translateY: translateY.value }
+        ],
+        elevation: shadowElevation.value,
+        shadowColor: RetroColors.border,
+        shadowOpacity: shadowElevation.value > 0 ? 1 : 0.3,
+        shadowOffset: { 
+          width: 0, 
+          height: shadowElevation.value > 0 ? 6 : 3 
+        },
+        shadowRadius: shadowElevation.value > 0 ? 8 : 0,
+      };
+    });
+
+    const handlePressIn = () => {
+      if (!disabled) {
+        // Popup effect: scale up and lift - more pronounced
+        scale.value = withSpring(1.08, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(-6, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(12, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    const handlePressOut = () => {
+      if (!disabled) {
+        // Return to normal
+        scale.value = withSpring(1, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(0, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(0, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[style, animatedStyle]}
+      >
+        {children}
+      </AnimatedPressable>
+    );
+  };
 
   const handleStartUserBroadcast = async () => {
     try {
@@ -56,7 +123,6 @@ const MeshScreen = () => {
     }
   };
 
-  // Clear everything & stop (single button)
   const handleClearEverythingAndStop = () => {
     if (masterState.size === 0 && !isBroadcasting) {
       return;
@@ -76,351 +142,429 @@ const MeshScreen = () => {
     );
   };
 
-  const renderReceivedMessageCard = (state: MessageState) => {
+  const renderReceivedMessageCard = (state: MessageState, index: number) => {
     const progress = getProgressFor(state);
-    
-    // Try to parse response to show transaction status
-    let transactionStatus: {
-      success?: boolean;
-      error?: string;
-      transactionHash?: string;
-      stage?: string;
-      blockNumber?: number;
-    } | null = null;
-    
-    if (state.isAck && state.isComplete && state.fullMessage) {
-      try {
-        transactionStatus = JSON.parse(state.fullMessage);
-      } catch {
-        // Not JSON, ignore
-      }
-    }
-    
     return (
-      <Card 
-        key={`msg-${state.id}`} 
-        style={[
-          styles.messageCard,
-          transactionStatus?.success === false && styles.errorCard,
-          transactionStatus?.success === true && styles.successCard,
-        ]}
+      <Animated.View
+        key={`msg-${state.id}-${animationKey}`}
+        entering={FadeInDown.delay(index * 50).springify()}
+        style={styles.messageCard}
       >
-        <Card.Content>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Title style={[styles.messageTitle, { textAlign: 'left' }]}>
-              {state.isAck ? 'Response' : 'Request'}
-            </Title>
-            {transactionStatus && (
-              <Badge 
-                style={[
-                  transactionStatus.success 
-                    ? styles.successBadge 
-                    : styles.errorBadge
-                ]}
-              >
-                {transactionStatus.success ? '✅ Success' : '❌ Failed'}
-              </Badge>
-            )}
+        <View style={styles.messageHeader}>
+          <Text style={styles.messageTitle}>
+            {state.isAck ? '↪ Response' : '→ Request'}
+          </Text>
+        </View>
+
+        <Text style={styles.messageText} numberOfLines={3}>
+          {state.fullMessage || (state.isComplete ? '(Decoded)' : '(Incomplete)')}
+        </Text>
+
+        <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressText}>{`Chunks: ${progress.received}/${progress.total}`}</Text>
+            <Text style={styles.progressText}>{`${progress.percent}%`}</Text>
+          </View>
+          
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBarFill, { width: `${progress.percent}%` }]} />
           </View>
 
-          {transactionStatus ? (
-            <View style={{ marginTop: 8 }}>
-              {transactionStatus.success ? (
-                <View>
-                  <Paragraph style={styles.statusText}>
-                    <Text style={styles.statusLabel}>Transaction Hash:</Text>{' '}
-                    {transactionStatus.transactionHash ? (
-                      <Text style={styles.hashText}>
-                        {transactionStatus.transactionHash.slice(0, 10)}...
-                        {transactionStatus.transactionHash.slice(-8)}
-                      </Text>
-                    ) : (
-                      'N/A'
-                    )}
-                  </Paragraph>
-                  {transactionStatus.blockNumber && (
-                    <Paragraph style={styles.statusText}>
-                      <Text style={styles.statusLabel}>Block:</Text>{' '}
-                      {transactionStatus.blockNumber}
-                    </Paragraph>
-                  )}
-                </View>
-              ) : (
-                <View>
-                  <Paragraph style={[styles.statusText, styles.errorText]}>
-                    <Text style={styles.statusLabel}>Error:</Text>{' '}
-                    {transactionStatus.error || 'Unknown error'}
-                  </Paragraph>
-                  {transactionStatus.stage && (
-                    <Paragraph style={styles.statusText}>
-                      <Text style={styles.statusLabel}>Stage:</Text>{' '}
-                      {transactionStatus.stage}
-                    </Paragraph>
-                  )}
-                </View>
-              )}
-            </View>
-          ) : (
-            <Paragraph numberOfLines={3}>
-              {state.fullMessage ||
-                (state.isComplete ? '(Decoded)' : '(Incomplete)')}
-            </Paragraph>
-          )}
-
-          <View style={{ marginTop: 8 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 6,
-              }}
-            >
-              <Text>{`Chunks: ${progress.received}/${progress.total}`}</Text>
-              <View style={{ flex: 1 }} />
-              <Text>{`${progress.percent}%`}</Text>
-            </View>
-            <ProgressBar
-              progress={progress.percent / 100}
-              style={{ height: 8, borderRadius: 6 }}
-              color={transactionStatus?.success === false ? '#f44336' : undefined}
-            />
-            <View
-              style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}
-            >
-              {Array.from({ length: state.totalChunks }, (_, i) => {
-                const idx = i + 1;
-                const have = state.chunks.has(idx);
-                return (
-                  <Badge
-                    key={idx}
-                    style={[
-                      styles.chunkBadge,
-                      have ? styles.chunkHave : styles.chunkMissing,
-                    ]}
-                  >
+          <View style={styles.chunkContainer}>
+            {Array.from({ length: state.totalChunks }, (_, i) => {
+              const idx = i + 1;
+              const have = state.chunks.has(idx);
+              return (
+                <View
+                  key={idx}
+                  style={[
+                    styles.chunkBadge,
+                    have ? styles.chunkHave : styles.chunkMissing,
+                  ]}
+                >
+                  <Text style={[styles.chunkText, have ? styles.chunkTextHave : styles.chunkTextMissing]}>
                     {idx}
-                  </Badge>
-                );
-              })}
-            </View>
+                  </Text>
+                </View>
+              );
+            })}
           </View>
-        </Card.Content>
-      </Card>
+        </View>
+      </Animated.View>
     );
   };
 
-  const allMessages = Array.from(masterState.values()).sort(
-    (a, b) => b.id - a.id
-  );
+  const allMessages = Array.from(masterState.values()).sort((a, b) => b.id - a.id);
   const currentBroadcast = getCurrentBroadcastInfo();
 
   return (
-    <PaperProvider theme={theme}>
-      <View style={styles.container}>
-        <Surface style={styles.broadcasterSection} elevation={2}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {/* Header Section */}
+        <Animated.View
+          key={`header-${animationKey}`}
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.headerSection}
+        >
+          <Text style={styles.mainTitle}>Mesh Node</Text>
+          
+          <Animated.View
+            entering={ZoomIn.delay(200).springify()}
+            style={styles.statusContainer}
           >
-            <Title style={styles.sectionTitle}>Mesh Node</Title>
-            <View style={styles.internetStatusContainer}>
-              <Icon
-                source={hasInternet ? 'wifi' : 'bluetooth'}
-                size={24}
-                color={hasInternet ? '#4CAF50' : '#2196F3'}
-              />
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: hasInternet ? '#4CAF50' : '#2196F3',
-                }}
-              >
-                {hasInternet ? 'Online' : 'BLE Mesh'}
-              </Text>
-            </View>
-          </View>
+            <Text style={styles.statusLabel}>
+              {hasInternet ? '📡 Online' : '📶 BLE Mesh'}
+            </Text>
+          </Animated.View>
+        </Animated.View>
 
-          <View
-            style={{
-              marginVertical: 8,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
+        {/* Broadcast Section */}
+        <Animated.View
+          key={`broadcast-${animationKey}`}
+          entering={FadeInUp.delay(300).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.sectionTitle}>Current Broadcast</Text>
+          
+          <Animated.View
+            entering={FadeIn.delay(400).springify()}
+            style={styles.broadcastStatusBox}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, color: '#555' }}>
-                Currently broadcasting:
-              </Text>
-              <Paragraph style={{ fontWeight: '700', marginTop: 2 }}>
-                {isBroadcasting && currentBroadcast.text
-                  ? `🔊 ${currentBroadcast.text}`
-                  : '— not broadcasting —'}
-              </Paragraph>
-            </View>
-            <IconButton
-              mode="outlined"
+            <Text style={styles.broadcastLabel}>Broadcasting:</Text>
+            <Text style={styles.broadcastText}>
+              {isBroadcasting && currentBroadcast.text
+                ? `🔊 ${currentBroadcast.text}`
+                : '— not broadcasting —'}
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(500).springify()}>
+            <AnimatedButton
               onPress={() => {
                 if (isBroadcasting) stopBroadcasting();
                 else startBroadcasting();
               }}
-              icon={isBroadcasting ? 'pause' : 'play'}
-              contentStyle={{ flexDirection: 'row-reverse' }}
+              style={styles.controlButton}
+            >
+              <Text style={styles.controlButtonText}>
+                {isBroadcasting ? '⏸ Pause Broadcast' : '▶ Start Broadcast'}
+              </Text>
+            </AnimatedButton>
+          </Animated.View>
+        </Animated.View>
+
+        {/* New Message Section */}
+        <Animated.View
+          key={`message-${animationKey}`}
+          entering={FadeInUp.delay(400).springify()}
+          style={styles.section}
+        >
+          <Text style={styles.sectionTitle}>Broadcast New Message</Text>
+          
+          <Animated.View entering={FadeIn.delay(500).springify()}>
+            <RNTextInput
+              style={styles.textInput}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Enter message to broadcast..."
+              placeholderTextColor={RetroColors.textSecondary}
+              multiline
             />
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(600).springify()}>
+            <AnimatedButton
+              onPress={handleStartUserBroadcast}
+              disabled={!message.trim()}
+              style={[styles.broadcastButton, !message.trim() && styles.buttonDisabled]}
+            >
+              <Text style={styles.buttonText}>Broadcast Message</Text>
+            </AnimatedButton>
+          </Animated.View>
+        </Animated.View>
+
+        {/* Network Messages Section */}
+        <Animated.View
+          key={`network-${animationKey}`}
+          entering={FadeInUp.delay(500).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Network Messages</Text>
+            <AnimatedButton onPress={handleClearEverythingAndStop} style={styles.clearButtonContainer}>
+              <Text style={styles.clearButton}>Clear</Text>
+            </AnimatedButton>
           </View>
 
-          <TextInput
-            mode="outlined"
-            label="Broadcast New Message"
-            value={message}
-            onChangeText={setMessage}
-            style={styles.textInput}
-            multiline
-          />
-          <Button
-            mode="contained"
-            onPress={handleStartUserBroadcast}
-            disabled={!message.trim()}
-            style={styles.button}
-          >
-            Broadcast Message
-          </Button>
-        </Surface>
-
-        <Surface style={styles.receiverSection} elevation={2}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Title style={styles.sectionTitle}>Network Messages</Title>
-            <Button mode="text" onPress={handleClearEverythingAndStop} compact>
-              Clear
-            </Button>
-          </View>
-
-          <ScrollView>
-            {allMessages.length === 0 ? (
-              <Paragraph style={styles.placeholderText}>
-                Listening for messages...
-              </Paragraph>
-            ) : (
-              allMessages.map((msg) => renderReceivedMessageCard(msg))
-            )}
-          </ScrollView>
-        </Surface>
-      </View>
-    </PaperProvider>
+          {allMessages.length === 0 ? (
+            <Animated.View
+              entering={FadeIn.delay(600)}
+              style={styles.emptyState}
+            >
+              <Text style={styles.emptyStateText}>👂 Listening for messages...</Text>
+            </Animated.View>
+          ) : (
+            allMessages.map((msg, index) => renderReceivedMessageCard(msg, index))
+          )}
+        </Animated.View>
+      </ScrollView>
+    </View>
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f4f7',
+    backgroundColor: RetroColors.background,
   },
-  broadcasterSection: {
-    padding: 15,
-    margin: 10,
-    borderRadius: 12,
-  },
-  receiverSection: {
+  scrollView: {
     flex: 1,
-    padding: 15,
-    margin: 10,
-    marginTop: 0,
-    borderRadius: 12,
+    padding: 20,
   },
-  sectionTitle: {
-    textAlign: 'left',
-    marginBottom: 12,
-    fontWeight: 600,
-  },
-  internetSwitchContainer: {
-    flexDirection: 'row',
+  headerSection: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 30,
   },
-  internetStatusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    textShadowColor: RetroColors.shadow,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
+    marginBottom: 15,
   },
-  textInput: {
-    marginBottom: 10,
-    minHeight: 64,
-  },
-  button: {
-    paddingVertical: 6,
-  },
-  placeholderText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 20,
-  },
-  messageCard: {
-    marginBottom: 10,
-    elevation: 0,
-    shadowColor: 'transparent',
-    backgroundColor: '#fff',
-  },
-  messageTitle: {
-    fontSize: 16,
-  },
-  chunkBadge: {
-    margin: 3,
-    paddingHorizontal: 6,
-  },
-  chunkHave: {
-    backgroundColor: '#c8e6c9',
-    color: '#0b6623',
-  },
-  chunkMissing: {
-    backgroundColor: '#ffe0b2',
-    color: '#6a4a00',
-  },
-  successCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  errorCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
-  },
-  successBadge: {
-    backgroundColor: '#4CAF50',
-    color: '#fff',
-  },
-  errorBadge: {
-    backgroundColor: '#f44336',
-    color: '#fff',
-  },
-  statusText: {
-    fontSize: 13,
-    marginBottom: 4,
+  statusContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: RetroColors.surface,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   statusLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#555',
-  },
-  hashText: {
+    color: RetroColors.text,
     fontFamily: 'monospace',
-    fontSize: 12,
+    textTransform: 'uppercase',
   },
-  errorText: {
-    color: '#f44336',
+  section: {
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 15,
+  },
+  clearButtonContainer: {
+    padding: 4,
+  },
+  clearButton: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: RetroColors.primary,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+  },
+  broadcastStatusBox: {
+    backgroundColor: RetroColors.surface,
+    padding: 15,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    marginBottom: 15,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  broadcastLabel: {
+    fontSize: 12,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    marginBottom: 5,
+  },
+  broadcastText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+  },
+  controlButton: {
+    backgroundColor: RetroColors.secondary,
+    paddingVertical: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  controlButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  textInput: {
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 13,
+    color: RetroColors.text,
+    backgroundColor: RetroColors.surface,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontFamily: 'monospace',
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    marginBottom: 15,
+  },
+  broadcastButton: {
+    backgroundColor: RetroColors.primary,
+    paddingVertical: 14,
+    borderRadius: 4,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  messageCard: {
+    backgroundColor: RetroColors.surface,
+    padding: 15,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    marginBottom: 15,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  messageHeader: {
+    marginBottom: 10,
+  },
+  messageTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+  },
+  messageText: {
+    fontSize: 13,
+    color: RetroColors.text,
+    fontFamily: 'monospace',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 11,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+    fontWeight: '600',
+  },
+  progressBarContainer: {
+    height: 10,
+    backgroundColor: 'white',
+    borderRadius: 2,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: RetroColors.accent,
+  },
+  chunkContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 5,
+  },
+  chunkBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 3,
+    margin: 3,
+    borderWidth: 2,
+  },
+  chunkHave: {
+    backgroundColor: RetroColors.successLight,
+    borderColor: RetroColors.success,
+  },
+  chunkMissing: {
+    backgroundColor: RetroColors.warningLight,
+    borderColor: RetroColors.warning,
+  },
+  chunkText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  chunkTextHave: {
+    color: RetroColors.success,
+  },
+  chunkTextMissing: {
+    color: RetroColors.warning,
   },
 });
 

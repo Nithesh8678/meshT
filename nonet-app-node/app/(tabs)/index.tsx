@@ -7,24 +7,39 @@ import {
   FlatList,
   Alert,
   SafeAreaView,
+  Pressable,
 } from "react-native";
 import { CameraView, CameraType } from "expo-camera";
 import { router } from "expo-router";
-import { Colors } from "@/constants/theme";
+import { useFocusEffect } from "@react-navigation/native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useWallet, ScannedAddress } from "@/contexts/WalletContext";
-import { 
-  NeoBrutalButton, 
-  NeoBrutalCard, 
-  NeoBrutalHeader, 
-  NeoBrutalBadge,
-  NeoBrutalDivider 
-} from '@/components/NeoBrutalismComponents';
-import { NeoBrutalismColors } from '@/constants/neoBrutalism';
-import { useBle } from "@/contexts/BleContext";
+
+// Retro Color Palette - matching Wallet and Mesh pages
+const RetroColors = {
+  background: '#FFF8DC', // Cornsilk
+  surface: '#FAEBD7', // Antique White
+  primary: '#FF6B35', // Retro Orange
+  secondary: '#D2691E', // Chocolate
+  accent: '#DAA520', // Goldenrod
+  text: '#3E2723', // Dark Brown
+  textSecondary: '#6D4C41', // Medium Brown
+  border: '#8B4513', // Saddle Brown
+  shadow: 'rgba(139, 69, 19, 0.3)',
+};
 
 export default function Scan(): React.JSX.Element {
   const [isScanning, setIsScanning] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
+  const [animationKey, setAnimationKey] = useState(0);
 
   // Use wallet context
   const {
@@ -33,6 +48,13 @@ export default function Scan(): React.JSX.Element {
     clearScannedAddresses,
     removeScannedAddress,
   } = useWallet();
+
+  // Reset animation key when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setAnimationKey((prev) => prev + 1);
+    }, [])
+  );
 
   const isValidWalletAddress = (address: string): boolean => {
     // Basic validation for Ethereum-style addresses
@@ -76,9 +98,73 @@ export default function Scan(): React.JSX.Element {
     );
   };
 
+  // Animated Button Component with Popup Effect
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-  const renderAddressItem = ({ item }: { item: ScannedAddress }) => (
-    <View style={styles.addressItem}>
+  const AnimatedButton = ({
+    onPress,
+    style,
+    children,
+    disabled = false,
+  }: any) => {
+    const scale = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const shadowElevation = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { scale: scale.value },
+          { translateY: translateY.value }
+        ],
+        elevation: shadowElevation.value,
+        shadowColor: RetroColors.border,
+        shadowOpacity: shadowElevation.value > 0 ? 1 : 0.3,
+        shadowOffset: { 
+          width: 0, 
+          height: shadowElevation.value > 0 ? 6 : 3 
+        },
+        shadowRadius: shadowElevation.value > 0 ? 8 : 0,
+      };
+    });
+
+    const handlePressIn = () => {
+      if (!disabled) {
+        // Popup effect: scale up and lift - more pronounced
+        scale.value = withSpring(1.08, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(-6, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(12, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    const handlePressOut = () => {
+      if (!disabled) {
+        // Return to normal
+        scale.value = withSpring(1, { damping: 12, stiffness: 400 });
+        translateY.value = withSpring(0, { damping: 12, stiffness: 400 });
+        shadowElevation.value = withSpring(0, { damping: 12, stiffness: 400 });
+      }
+    };
+
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[style, animatedStyle]}
+      >
+        {children}
+      </AnimatedPressable>
+    );
+  };
+
+  const renderAddressItem = ({ item, index }: { item: ScannedAddress; index: number }) => (
+    <Animated.View
+      key={`${item.id}-${animationKey}`}
+      entering={FadeInDown.delay(index * 50).springify()}
+      style={styles.addressItem}
+    >
       <View style={styles.addressInfo}>
         <Text
           style={styles.addressText}
@@ -91,18 +177,18 @@ export default function Scan(): React.JSX.Element {
           {item.timestamp.toLocaleString()}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.sendButton}
+      <AnimatedButton
         onPress={() => {
           router.push({
             pathname: "/transaction",
             params: { toAddress: item.address },
           });
         }}
+        style={styles.sendButton}
       >
         <Text style={styles.sendButtonText}>Send</Text>
-      </TouchableOpacity>
-    </View>
+      </AnimatedButton>
+    </Animated.View>
   );
 
   // Camera permissions are now handled at wallet creation level
@@ -110,7 +196,7 @@ export default function Scan(): React.JSX.Element {
 
   if (isScanning) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.cameraContainer}>
         <CameraView
           style={styles.camera}
           facing={facing}
@@ -120,16 +206,24 @@ export default function Scan(): React.JSX.Element {
           }}
         >
           <View style={styles.cameraOverlay}>
-            <View style={styles.scanFrame} />
-            <Text style={styles.scanInstruction}>
-              Point your camera at a QR code containing a wallet address
-            </Text>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setIsScanning(false)}
+            <Animated.View
+              entering={FadeIn.delay(200).springify()}
+              style={styles.scanFrame}
+            />
+            <Animated.Text
+              entering={FadeInUp.delay(300).springify()}
+              style={styles.scanInstruction}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+              Point your camera at a QR code containing a wallet address
+            </Animated.Text>
+            <Animated.View entering={FadeInUp.delay(400).springify()}>
+              <AnimatedButton
+                onPress={() => setIsScanning(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </AnimatedButton>
+            </Animated.View>
           </View>
         </CameraView>
       </SafeAreaView>
@@ -139,44 +233,59 @@ export default function Scan(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-      <Text style={styles.title}>QR Code Scanner</Text>
+        <Animated.Text
+          key={`title-${animationKey}`}
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.title}
+        >
+          QR Code Scanner
+        </Animated.Text>
 
-      <TouchableOpacity
-        style={styles.scanButton}
-        onPress={() => setIsScanning(true)}
-      >
-        <Text style={styles.scanButtonText}>Start Scanning</Text>
-      </TouchableOpacity>
+        <Animated.View entering={FadeInUp.delay(200).springify()}>
+          <AnimatedButton
+            onPress={() => setIsScanning(true)}
+            style={styles.scanButton}
+          >
+            <Text style={styles.scanButtonText}>📷 Start Scanning</Text>
+          </AnimatedButton>
+        </Animated.View>
 
-      <View style={styles.addressesSection}>
-        <View style={styles.addressesHeader}>
-          <Text style={styles.addressesTitle}>
-            Scanned Addresses ({scannedAddresses.length})
-          </Text>
-          {scannedAddresses.length > 0 && (
-            <TouchableOpacity onPress={clearAddresses}>
-              <Text style={styles.clearText}>Clear All</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {scannedAddresses.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No addresses scanned yet</Text>
-            <Text style={styles.emptySubText}>
-              Tap "Start Scanning" to scan your first QR code
+        <Animated.View
+          key={`addresses-${animationKey}`}
+          entering={FadeInUp.delay(300).springify()}
+          style={styles.addressesSection}
+        >
+          <View style={styles.addressesHeader}>
+            <Text style={styles.addressesTitle}>
+              Scanned Addresses ({scannedAddresses.length})
             </Text>
+            {scannedAddresses.length > 0 && (
+              <AnimatedButton onPress={clearAddresses} style={styles.clearButtonContainer}>
+                <Text style={styles.clearText}>Clear All</Text>
+              </AnimatedButton>
+            )}
           </View>
-        ) : (
-          <FlatList
-            data={scannedAddresses}
-            renderItem={renderAddressItem}
-            keyExtractor={(item) => item.id}
-            style={styles.addressesList}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </View>
+
+          {scannedAddresses.length === 0 ? (
+            <Animated.View
+              entering={FadeIn.delay(400)}
+              style={styles.emptyState}
+            >
+              <Text style={styles.emptyText}>📭 No addresses scanned yet</Text>
+              <Text style={styles.emptySubText}>
+                Tap "Start Scanning" to scan your first QR code
+              </Text>
+            </Animated.View>
+          ) : (
+            <FlatList
+              data={scannedAddresses}
+              renderItem={({ item, index }) => renderAddressItem({ item, index })}
+              keyExtractor={(item) => item.id}
+              style={styles.addressesList}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -185,42 +294,50 @@ export default function Scan(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: NeoBrutalismColors.background,
+    backgroundColor: RetroColors.background,
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: NeoBrutalismColors.textPrimary,
-    textAlign: "center",
-    marginBottom: 24,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: RetroColors.text,
+    textAlign: 'center',
+    marginBottom: 30,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    textShadowColor: RetroColors.shadow,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
   },
   scanButton: {
-    backgroundColor: NeoBrutalismColors.primary,
-    borderColor: NeoBrutalismColors.primary,
-    borderWidth: 4,
+    backgroundColor: RetroColors.primary,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 8,
-    marginBottom: 32,
-    shadowColor: NeoBrutalismColors.primary,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.3,
+    borderRadius: 4,
+    marginBottom: 30,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
     shadowRadius: 0,
-    elevation: 8,
   },
   scanButtonText: {
-    color: NeoBrutalismColors.textInverse,
-    fontSize: 16,
-    fontWeight: "800",
-    textAlign: "center",
-    textTransform: "uppercase",
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
   camera: {
@@ -235,10 +352,14 @@ const styles = StyleSheet.create({
   scanFrame: {
     width: 250,
     height: 250,
-    borderWidth: 2,
-    borderColor: "white",
-    borderRadius: 10,
+    borderWidth: 4,
+    borderColor: RetroColors.primary,
+    borderRadius: 4,
     backgroundColor: "transparent",
+    shadowColor: RetroColors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
   },
   scanInstruction: {
     color: "white",
@@ -246,18 +367,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 30,
     paddingHorizontal: 20,
+    fontFamily: 'monospace',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   cancelButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: RetroColors.secondary,
     paddingHorizontal: 30,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginTop: 30,
+    borderWidth: 3,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   cancelButtonText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   addressesSection: {
     flex: 1,
@@ -269,36 +404,37 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   addressesTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: NeoBrutalismColors.textPrimary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 14,
+    fontWeight: '700',
+    color: RetroColors.text,
+    textTransform: 'uppercase',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   clearText: {
-    color: NeoBrutalismColors.primary,
-    fontSize: 14,
-    fontWeight: "600",
-    textTransform: "uppercase",
+    color: RetroColors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    fontFamily: 'monospace',
   },
   addressesList: {
     flex: 1,
   },
   addressItem: {
-    backgroundColor: NeoBrutalismColors.surface,
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: RetroColors.surface,
+    padding: 15,
+    borderRadius: 4,
     marginBottom: 12,
-    borderWidth: 3,
-    borderColor: NeoBrutalismColors.borderSubtle,
-    shadowColor: NeoBrutalismColors.primary,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
     shadowOffset: {
       width: 2,
       height: 2,
     },
-    shadowOpacity: 0.2,
+    shadowOpacity: 1,
     shadowRadius: 0,
-    elevation: 4,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -308,44 +444,59 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   addressText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "monospace",
-    color: NeoBrutalismColors.textPrimary,
+    color: RetroColors.text,
     marginBottom: 5,
     fontWeight: "600",
   },
+  timestampText: {
+    fontSize: 10,
+    color: RetroColors.textSecondary,
+    fontFamily: 'monospace',
+  },
   sendButton: {
-    backgroundColor: NeoBrutalismColors.primary,
+    backgroundColor: RetroColors.secondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 2,
-    borderColor: NeoBrutalismColors.primary,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   sendButtonText: {
-    color: NeoBrutalismColors.textInverse,
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  timestampText: {
-    fontSize: 12,
-    color: NeoBrutalismColors.textSecondary,
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
-    color: NeoBrutalismColors.textSecondary,
-    marginBottom: 8,
-    fontWeight: "600",
+    fontSize: 14,
+    color: RetroColors.text,
+    marginBottom: 10,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
   },
   emptySubText: {
-    fontSize: 14,
-    color: NeoBrutalismColors.textTertiary,
+    fontSize: 12,
+    color: RetroColors.textSecondary,
     textAlign: "center",
+    fontFamily: 'monospace',
+    paddingHorizontal: 20,
+  },
+  clearButtonContainer: {
+    padding: 4,
   },
 });

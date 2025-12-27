@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "nonet-app-node",
-    "slug": "nonet-app-node",
+    "name": "MESHT",
+    "slug": "MESHT",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.1.png",
     "scheme": "nonetappnode",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,9 +15,9 @@
       "minSdkVersion": 24,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/logo.1.png",
+        "backgroundImage": "./assets/images/logo.1.png",
+        "monochromeImage": "./assets/images/logo.1.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

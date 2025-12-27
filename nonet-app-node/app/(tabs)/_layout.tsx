@@ -4,8 +4,21 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView, Platform, StatusBar } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { Colors } from '@/constants/theme';
-import { NeoBrutalismColors } from '@/constants/neoBrutalism';
+
+// Warm, soft aesthetic color palette inspired by the ClickLearn design
+const WarmRetroColors = {
+  primary: '#F4A261',        // Warm peach/orange
+  secondary: '#E76F51',      // Terracotta
+  accent: '#2A9D8F',         // Teal
+  background: '#FFF8F0',     // Warm off-white
+  surface: '#FEFAE0',        // Cream
+  sidebar: '#FFE8CC',        // Light peach
+  border: '#E9C896',         // Soft tan
+  text: '#264653',           // Dark teal-gray
+  textSecondary: '#6B7280',  // Medium gray
+  success: '#A8DADC',        // Soft blue-green
+  cardBg: '#FFFFFF',         // White for cards
+};
 
 export default function TabLayout() {
   // Calculate safe area padding for Android
@@ -14,22 +27,40 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: NeoBrutalismColors.primary,
-        tabBarInactiveTintColor: NeoBrutalismColors.textSecondary,
+        tabBarActiveTintColor: WarmRetroColors.primary,
+        tabBarInactiveTintColor: WarmRetroColors.textSecondary,
         tabBarStyle: { 
-          backgroundColor: NeoBrutalismColors.background,
-          borderTopWidth: 4,
-          borderTopColor: NeoBrutalismColors.border,
-          paddingTop: Platform.OS === 'android' ? statusBarHeight + 8 : 8,
-          height: Platform.OS === 'android' ? 70 + statusBarHeight : 70,
-          paddingBottom: 8,
+          backgroundColor: WarmRetroColors.sidebar,
+          borderTopWidth: 0,
+          paddingTop: Platform.OS === 'android' ? statusBarHeight + 18 : 18,
+          height: Platform.OS === 'android' ? 95 + statusBarHeight : 95,
+          paddingBottom: 18,
+          paddingHorizontal: 10,
+          // Enhanced shadow for depth and animation visibility
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '700',
+          fontSize: 11,
+          fontWeight: '600',
           textTransform: 'uppercase',
-          letterSpacing: 1,
-          marginTop: 4,
+          letterSpacing: 0.5,
+          marginTop: 6,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 12,
+          borderRadius: 20,
+          marginHorizontal: 8,
+          marginVertical: 6,
+          minHeight: 70,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'transparent',
+          // Add space for animation lift effect
+          transform: [{ translateY: 0 }],
         },
         headerShown: false,
         tabBarButton: HapticTab,
@@ -38,22 +69,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'SCAN',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="qr-code-scanner" color={color} />,
+          title: 'Scan',
+          tabBarIcon: ({ color }) => <MaterialIcons size={26} name="qr-code-scanner" color={color} />,
         }}
       />
       <Tabs.Screen
         name="show"
         options={{
-          title: 'WALLET',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="account-balance-wallet" color={color} />,
+          title: 'Wallet',
+          tabBarIcon: ({ color }) => <MaterialIcons size={26} name="account-balance-wallet" color={color} />,
         }}
       />
       <Tabs.Screen
         name="mesh"
         options={{
-          title: 'MESH',
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} name="device-hub" color={color} />,
+          title: 'Mesh',
+          tabBarIcon: ({ color }) => <MaterialIcons size={26} name="device-hub" color={color} />,
         }}
       />
     </Tabs>
