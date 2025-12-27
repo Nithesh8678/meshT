@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import React, { useEffect } from "react";
+import { View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import {
   Text,
   Button,
@@ -8,54 +8,44 @@ import {
   Divider,
   Chip,
   useTheme,
-} from 'react-native-paper';
-import { useLocalSearchParams, router } from 'expo-router';
-import QRCode from 'react-native-qrcode-svg';
-import { useBle } from '@/contexts/BleContext';
+} from "react-native-paper";
+import { useLocalSearchParams, router } from "expo-router";
+import QRCode from "react-native-qrcode-svg";
+import { useBle } from "@/contexts/BleContext";
 
 export default function TransactionSuccessPage(): React.JSX.Element {
   const theme = useTheme();
   const { stopBroadcasting } = useBle();
-  const {
-    amount,
-    currency,
-    toAddress,
-    fromAddress,
-    chain,
-    txHash,
-    timestamp,
-    fullMessage,
-  } = useLocalSearchParams<{
-    amount: string;
-    currency: string;
-    toAddress: string;
-    fromAddress: string;
-    chain: string;
-    txHash: string;
-    timestamp: string;
-    fullMessage?: string;
-  }>();
+  const { amount, currency, toAddress, chain, txHash, timestamp, fullMessage } =
+    useLocalSearchParams<{
+      amount: string;
+      currency: string;
+      toAddress: string;
+      chain: string;
+      txHash: string;
+      timestamp: string;
+      fullMessage?: string;
+    }>();
 
   const handleGoHome = () => {
-    router.replace('/(tabs)/');
+    router.replace("/");
   };
 
   const handleNewTransaction = () => {
-    router.replace('/(tabs)/');
+    router.replace("/");
   };
 
   useEffect(() => {
     stopBroadcasting();
-  }, []);
+  }, [stopBroadcasting]);
 
   // Generate signature string from transaction hash (simplified for demo)
   const generateSignatureString = (hash: string): string => {
-    if (!hash) return 'Generating signature...';
+    if (!hash) return "Generating signature...";
     // This would normally be the actual signature from the transaction
     return `0x${hash.slice(2, 34)}...${hash.slice(-32)}`;
   };
 
-  
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -103,7 +93,7 @@ export default function TransactionSuccessPage(): React.JSX.Element {
             </Text>
             <Surface style={styles.hashSurface} elevation={1}>
               <Text variant="bodyMedium" style={styles.hashText} selectable>
-                {txHash || 'Generating hash...'}
+                {txHash || "Generating hash..."}
               </Text>
             </Surface>
           </Card.Content>
@@ -121,7 +111,7 @@ export default function TransactionSuccessPage(): React.JSX.Element {
                 style={styles.signatureText}
                 selectable
               >
-                {generateSignatureString(txHash || '')}
+                {generateSignatureString(txHash || "")}
               </Text>
             </Surface>
           </Card.Content>
@@ -192,7 +182,7 @@ export default function TransactionSuccessPage(): React.JSX.Element {
               <Text variant="bodySmall" style={styles.addressText}>
                 {toAddress
                   ? `${toAddress.slice(0, 8)}...${toAddress.slice(-8)}`
-                  : 'Unknown'}
+                  : "Unknown"}
               </Text>
             </View>
 
@@ -203,7 +193,7 @@ export default function TransactionSuccessPage(): React.JSX.Element {
               <Text variant="bodyMedium" style={styles.detailValue}>
                 {timestamp
                   ? new Date(parseInt(timestamp)).toLocaleString()
-                  : 'Just now'}
+                  : "Just now"}
               </Text>
             </View>
           </Card.Content>
@@ -234,7 +224,7 @@ const styles = StyleSheet.create({
 
   // Success Header
   successHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
     marginTop: 16,
   },
@@ -243,30 +233,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   successTitle: {
-    textAlign: 'center',
-    fontWeight: '700',
+    textAlign: "center",
+    fontWeight: "700",
   },
 
   // QR Code - MOST IMPORTANT
   qrCard: {
     marginBottom: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   qrContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 24,
   },
   qrTitle: {
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 20,
-    textAlign: 'center',
-    color: '#333',
+    textAlign: "center",
+    color: "#333",
   },
   qrContainer: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -275,86 +265,86 @@ const styles = StyleSheet.create({
   qrPlaceholder: {
     width: 200,
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     borderRadius: 8,
   },
 
   // Transaction Hash - SECOND MOST IMPORTANT
   hashCard: {
     marginBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   hashTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
-    color: '#333',
+    color: "#333",
   },
   hashSurface: {
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   hashText: {
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
+    color: "#333",
+    textAlign: "center",
   },
 
   // Hash Signature - THIRD MOST IMPORTANT
   signatureCard: {
     marginBottom: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   signatureTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
-    color: '#333',
+    color: "#333",
   },
   signatureSurface: {
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   signatureText: {
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
+    color: "#333",
+    textAlign: "center",
   },
 
   // Network Response Card
   responseCard: {
     marginBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   responseTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
-    color: '#333',
+    color: "#333",
   },
   responseSurface: {
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
     maxHeight: 150,
   },
   responseScroll: {
     maxHeight: 120,
   },
   responseText: {
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     fontSize: 12,
-    color: '#333',
+    color: "#333",
     lineHeight: 18,
   },
 
   // Primary Home Button - FOURTH MOST IMPORTANT
   homeButton: {
     marginBottom: 32,
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
   },
   homeButtonContent: {
     paddingVertical: 16,
@@ -363,42 +353,42 @@ const styles = StyleSheet.create({
   // Additional Details - Less Important
   detailsCard: {
     marginBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   detailsTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 16,
-    color: '#333',
+    color: "#333",
   },
   divider: {
     marginBottom: 16,
   },
   detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
     paddingVertical: 4,
   },
   detailLabel: {
-    textTransform: 'uppercase',
-    color: '#666',
+    textTransform: "uppercase",
+    color: "#666",
     flex: 1,
   },
   detailValue: {
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     flex: 2,
-    textAlign: 'right',
+    textAlign: "right",
   },
   chainChip: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: "#E3F2FD",
   },
   addressText: {
-    fontFamily: 'monospace',
-    color: '#666',
+    fontFamily: "monospace",
+    color: "#666",
     flex: 2,
-    textAlign: 'right',
+    textAlign: "right",
   },
 
   // Secondary Button

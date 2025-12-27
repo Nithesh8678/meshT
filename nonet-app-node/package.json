@@ -9,7 +9,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build": "expo run:android --variant release"
+    "build": "tsc --noEmit && expo export --platform web",
+    "build:android": "expo run:android --variant release"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

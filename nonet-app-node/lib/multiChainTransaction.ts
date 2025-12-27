@@ -1,6 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ethers, JsonRpcProvider, Wallet, parseEther, formatEther } from "ethers";
-import { getChainById, getCurrencyById, getNativeCurrencyForChain, type ChainConfig, type CurrencyConfig } from '@/data/chains';
+import {
+  ethers,
+  JsonRpcProvider,
+  Wallet,
+  parseEther,
+  formatEther,
+} from "ethers";
+import {
+  getChainById,
+  getCurrencyById,
+  getNativeCurrencyForChain,
+  type ChainConfig,
+  type CurrencyConfig,
+} from "@/data/chains";
 
 // Multi-chain transaction result interface
 export interface MultiChainTransactionResult {
@@ -42,8 +54,8 @@ export async function sendMultiChainTransaction(
         success: false,
         error: `Unsupported chain: ${chainId}`,
         chainId: 0,
-        chainName: 'Unknown',
-        currency: 'Unknown',
+        chainName: "Unknown",
+        currency: "Unknown",
       };
     }
 
@@ -61,25 +73,27 @@ export async function sendMultiChainTransaction(
         error: `Currency not found or not supported on ${chain.name}`,
         chainId: chain.chainId,
         chainName: chain.name,
-        currency: 'Unknown',
+        currency: "Unknown",
       };
     }
 
     console.log(`🚀 Starting ${chain.name} transaction...`);
-    console.log('Chain:', chain.name);
-    console.log('Currency:', currency.symbol);
-    console.log('Receiver:', receiverAddress);
-    console.log('Amount:', amount, currency.symbol);
+    console.log("Chain:", chain.name);
+    console.log("Currency:", currency.symbol);
+    console.log("Receiver:", receiverAddress);
+    console.log("Amount:", amount, currency.symbol);
 
     // 1. Create provider
     const provider = new JsonRpcProvider(chain.rpcUrl);
     console.log(`✅ Provider connected to ${chain.name}`);
 
     // 2. Create wallet from private key
-    const cleanPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+    const cleanPrivateKey = privateKey.startsWith("0x")
+      ? privateKey
+      : `0x${privateKey}`;
     const wallet = new Wallet(cleanPrivateKey, provider);
     const senderAddress = await wallet.getAddress();
-    console.log('✅ Wallet created. Sender address:', senderAddress);
+    console.log("✅ Wallet created. Sender address:", senderAddress);
 
     // 3. Check sender balance
     let balance: bigint;
@@ -107,7 +121,11 @@ export async function sendMultiChainTransaction(
         "function decimals() view returns (uint8)",
       ];
 
-      const contract = new ethers.Contract(currency.contractAddress, erc20Abi, provider);
+      const contract = new ethers.Contract(
+        currency.contractAddress,
+        erc20Abi,
+        provider
+      );
       balance = await contract.balanceOf(senderAddress);
       balanceFormatted = formatEther(balance);
     }
@@ -117,7 +135,7 @@ export async function sendMultiChainTransaction(
     // 4. Validate sufficient balance
     const amountToSend = parseFloat(amount);
     const currentBalance = parseFloat(balanceFormatted);
-    
+
     if (amountToSend > currentBalance) {
       return {
         success: false,
@@ -147,38 +165,42 @@ export async function sendMultiChainTransaction(
       const transaction = {
         to: receiverAddress,
         value: parseEther(amount),
-        gasLimit: chain.gasSettings?.defaultGasLimit || '21000',
+        gasLimit: chain.gasSettings?.defaultGasLimit || "21000",
       };
 
-      console.log('📝 Native transaction created:', transaction);
+      console.log("📝 Native transaction created:", transaction);
       txResponse = await wallet.sendTransaction(transaction);
     } else {
       // ERC-20 token transaction
       if (!currency.contractAddress) {
-        throw new Error('Contract address not found for ERC-20 token');
+        throw new Error("Contract address not found for ERC-20 token");
       }
 
       const erc20Abi = [
         "function transfer(address to, uint256 amount) returns (bool)",
       ];
 
-      const contract = new ethers.Contract(currency.contractAddress, erc20Abi, wallet);
+      const contract = new ethers.Contract(
+        currency.contractAddress,
+        erc20Abi,
+        wallet
+      );
       const transferAmount = parseEther(amount); // Adjust for token decimals if needed
-      
-      console.log('📝 ERC-20 transaction created');
+
+      console.log("📝 ERC-20 transaction created");
       txResponse = await contract.transfer(receiverAddress, transferAmount);
     }
 
-    console.log('🎉 Transaction sent! Hash:', txResponse.hash);
+    console.log("🎉 Transaction sent! Hash:", txResponse.hash);
 
     // 7. Wait for confirmation
-    console.log('⏳ Waiting for confirmation...');
+    console.log("⏳ Waiting for confirmation...");
     const receipt = await txResponse.wait();
-    
+
     if (!receipt) {
       return {
         success: false,
-        error: 'Transaction failed to get receipt',
+        error: "Transaction failed to get receipt",
         transactionHash: txResponse.hash,
         chainId: chain.chainId,
         chainName: chain.name,
@@ -186,46 +208,49 @@ export async function sendMultiChainTransaction(
       };
     }
 
-    console.log('✅ Transaction confirmed!');
-    console.log('Block number:', receipt.blockNumber);
-    console.log('Gas used:', receipt.gasUsed.toString());
+    console.log("✅ Transaction confirmed!");
+    console.log("Block number:", receipt.blockNumber);
+    console.log("Gas used:", receipt.gasUsed.toString());
 
     return {
       success: true,
       transactionHash: txResponse.hash,
       gasUsed: receipt.gasUsed.toString(),
-      gasPrice: receipt.gasPrice?.toString() || '0',
+      gasPrice: receipt.gasPrice?.toString() || "0",
       blockNumber: receipt.blockNumber,
       chainId: chain.chainId,
       chainName: chain.name,
       currency: currency.symbol,
     };
-
   } catch (error: any) {
-    console.error('❌ Multi-chain transaction failed:', error);
-    
+    console.error("❌ Multi-chain transaction failed:", error);
+
     const chain = getChainById(chainId);
-    const currency = currencyId ? getCurrencyById(currencyId) : getNativeCurrencyForChain(chainId);
-    
+    const currency = currencyId
+      ? getCurrencyById(currencyId)
+      : getNativeCurrencyForChain(chainId);
+
     // Handle common errors
-    let errorMessage = error.message || 'Unknown error occurred';
-    
-    if (error.code === 'INSUFFICIENT_FUNDS') {
-      errorMessage = 'Insufficient funds for transaction (including gas fees)';
-    } else if (error.code === 'NETWORK_ERROR') {
-      errorMessage = 'Network connection error. Please check your internet connection.';
-    } else if (error.message?.includes('gas')) {
-      errorMessage = 'Gas estimation failed. The transaction might fail or gas limit is too low.';
-    } else if (error.message?.includes('nonce')) {
-      errorMessage = 'Nonce error. Please try again in a few seconds.';
+    let errorMessage = error.message || "Unknown error occurred";
+
+    if (error.code === "INSUFFICIENT_FUNDS") {
+      errorMessage = "Insufficient funds for transaction (including gas fees)";
+    } else if (error.code === "NETWORK_ERROR") {
+      errorMessage =
+        "Network connection error. Please check your internet connection.";
+    } else if (error.message?.includes("gas")) {
+      errorMessage =
+        "Gas estimation failed. The transaction might fail or gas limit is too low.";
+    } else if (error.message?.includes("nonce")) {
+      errorMessage = "Nonce error. Please try again in a few seconds.";
     }
 
     return {
       success: false,
       error: errorMessage,
       chainId: chain?.chainId || 0,
-      chainName: chain?.name || 'Unknown',
-      currency: currency?.symbol || 'Unknown',
+      chainName: chain?.name || "Unknown",
+      currency: currency?.symbol || "Unknown",
     };
   }
 }
@@ -268,7 +293,9 @@ export async function getMultiChainBalance(
     } else {
       // ERC-20 token balance
       if (!currency.contractAddress) {
-        throw new Error(`Contract address not configured for ${currency.symbol}`);
+        throw new Error(
+          `Contract address not configured for ${currency.symbol}`
+        );
       }
 
       const erc20Abi = [
@@ -276,14 +303,18 @@ export async function getMultiChainBalance(
         "function decimals() view returns (uint8)",
       ];
 
-      const contract = new ethers.Contract(currency.contractAddress, erc20Abi, provider);
+      const contract = new ethers.Contract(
+        currency.contractAddress,
+        erc20Abi,
+        provider
+      );
       const balance = await contract.balanceOf(address);
       const decimals = await contract.decimals();
-      
+
       return formatEther(balance); // Adjust for proper decimals if needed
     }
   } catch (error) {
-    console.error('Failed to get multi-chain balance:', error);
+    console.error("Failed to get multi-chain balance:", error);
     throw error;
   }
 }
@@ -303,12 +334,12 @@ export async function getChainGasPrice(chainId: string): Promise<string> {
     const provider = new JsonRpcProvider(chain.rpcUrl);
     const feeData = await provider.getFeeData();
     const gasPrice = feeData.gasPrice || 0n;
-    
+
     // Convert to Gwei
     return formatEther(gasPrice * 1000000000n);
   } catch (error) {
-    console.error('Failed to get gas price:', error);
-    return chain?.gasSettings?.defaultGasPrice || '20'; // Default fallback
+    console.error("Failed to get gas price:", error);
+    return chainId ? "20" : "20"; // Default fallback
   }
 }
 
@@ -339,14 +370,14 @@ export async function getMultiChainTransaction(
 
     const provider = new JsonRpcProvider(chain.rpcUrl);
     const tx = await provider.getTransaction(txHash);
-    
+
     if (!tx) return null;
 
     let receipt = null;
     try {
       receipt = await provider.getTransactionReceipt(txHash);
     } catch (error) {
-      console.warn('Receipt not available yet:', error);
+      console.warn("Receipt not available yet:", error);
     }
 
     return {
@@ -358,13 +389,17 @@ export async function getMultiChainTransaction(
       gasPrice: tx.gasPrice?.toString() || "0",
       blockNumber: receipt?.blockNumber,
       timestamp: Date.now(),
-      status: receipt ? (receipt.status === 1 ? 'success' : 'failed') : 'pending',
+      status: receipt
+        ? receipt.status === 1
+          ? "success"
+          : "failed"
+        : "pending",
       confirmations: receipt ? 1 : 0,
       chainId: chain.chainId,
       chainName: chain.name,
     };
   } catch (error) {
-    console.error('Failed to get multi-chain transaction:', error);
+    console.error("Failed to get multi-chain transaction:", error);
     return null;
   }
 }
