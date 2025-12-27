@@ -8,11 +8,27 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
-import { Colors } from "@/constants/theme";
 import { useWallet } from "@/contexts/WalletContext";
 import { useBle } from "@/contexts/BleContext";
 import { CONTRACT_CONFIG, TransactionPayload } from "@/constants/contracts";
 import { ethers } from "ethers";
+
+// Retro Color Palette - matching Mesh page
+const RetroColors = {
+  background: '#FFF8DC', // Cornsilk
+  surface: '#FAEBD7', // Antique White
+  primary: '#FF6B35', // Retro Orange
+  secondary: '#D2691E', // Chocolate
+  accent: '#DAA520', // Goldenrod
+  text: '#3E2723', // Dark Brown
+  textSecondary: '#6D4C41', // Medium Brown
+  border: '#8B4513', // Saddle Brown
+  shadow: 'rgba(139, 69, 19, 0.3)',
+  success: '#2E7D32', // Dark Green
+  successLight: '#c8e6c9',
+  warning: '#F57C00', // Orange
+  warningLight: '#ffe0b2',
+};
 
 // Create EIP-3009 transferWithAuthorization signature using ethers.js - exactly matches simpleTransferWithAuthorization.ts
 const createTransferWithAuthorizationSignature = async (
@@ -697,18 +713,18 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         {/* Fixed Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Processing Transaction</Text>
+          <Text style={styles.headerTitle}>PROCESSING TRANSACTION</Text>
           {transactionData && (
             <View style={styles.transactionInfo}>
               <Text style={styles.transactionText}>
-                Sending {transactionData.amount} {transactionData.currency}
+                SENDING {transactionData.amount} {transactionData.currency}
               </Text>
               <Text style={styles.transactionAddress}>
-                to {transactionData.toAddress.slice(0, 6)}...
+                TO {transactionData.toAddress.slice(0, 6)}...
                 {transactionData.toAddress.slice(-4)}
               </Text>
               <Text style={styles.transactionChain}>
-                on {transactionData.chain}
+                ON {transactionData.chain}
               </Text>
             </View>
           )}
@@ -727,11 +743,11 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
               if (shouldShowChunkProgress()) {
                 const chunkProgress = getChunkProgress();
                 if (chunkProgress.total > 0) {
-                  return `${chunkProgress.received}/${chunkProgress.total}`;
+                  return `${chunkProgress.received}/${chunkProgress.total} CHUNKS`;
                 }
               }
               // Otherwise show step progress
-              return `Step ${currentStep + 1} of ${TRANSACTION_STEPS.length}`;
+              return `STEP ${currentStep + 1} OF ${TRANSACTION_STEPS.length}`;
             })()}
           </Text>
         </View>
@@ -750,7 +766,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
           {/* Loading Message */}
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingMessage}>
-              {getCurrentLoadingMessage()}
+              {getCurrentLoadingMessage().toUpperCase()}
             </Text>
           </View>
 
@@ -758,7 +774,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
           {isCompleted && (
             <Animated.View style={styles.successContainer}>
               <Text style={styles.successIcon}>🎉</Text>
-              <Text style={styles.successText}>Transaction Successful!</Text>
+              <Text style={styles.successText}>TRANSACTION SUCCESSFUL!</Text>
             </Animated.View>
           )}
         </ScrollView>
@@ -767,7 +783,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
         {onCancel && !isCompleted && (
           <View style={styles.fixedFooter}>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-              <Text style={styles.cancelButtonText}>Cancel Transaction</Text>
+              <Text style={styles.cancelButtonText}>CANCEL TRANSACTION</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -781,7 +797,7 @@ export const TransactionLoader: React.FC<TransactionLoaderProps> = ({
 const styles = StyleSheet.create({
   fullPageContainer: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: RetroColors.background,
   },
   container: {
     flex: 1,
@@ -793,32 +809,47 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    color: Colors.light.text,
-    marginBottom: 10,
+    color: RetroColors.text,
+    fontFamily: "monospace",
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    textShadowColor: RetroColors.shadow,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
+    marginBottom: 15,
   },
   transactionInfo: {
+    backgroundColor: RetroColors.surface,
+    padding: 15,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 8,
     width: "100%",
   },
   transactionText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.text,
+    fontSize: 14,
+    fontWeight: "700",
+    color: RetroColors.text,
+    fontFamily: "monospace",
   },
   transactionAddress: {
-    fontSize: 14,
-    color: Colors.light.icon,
+    fontSize: 12,
+    color: RetroColors.textSecondary,
     fontFamily: "monospace",
-    marginTop: 2,
+    marginTop: 3,
   },
   transactionChain: {
     fontSize: 12,
-    color: Colors.light.icon,
+    color: RetroColors.textSecondary,
+    fontFamily: "monospace",
+    textTransform: "uppercase",
     marginTop: 2,
   },
   progressContainer: {
@@ -826,21 +857,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: "#e0e0e0",
-    borderRadius: 3,
+    height: 12,
+    backgroundColor: RetroColors.surface,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
     overflow: "hidden",
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: Colors.light.tint,
-    borderRadius: 3,
+    backgroundColor: RetroColors.accent,
   },
   progressText: {
     fontSize: 12,
-    color: Colors.light.icon,
+    color: RetroColors.textSecondary,
+    fontFamily: "monospace",
     textAlign: "center",
     marginTop: 8,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   scrollContainer: {
     flex: 1,
@@ -864,20 +903,24 @@ const styles = StyleSheet.create({
   stepIcon: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: "#f0f0f0",
+    borderRadius: 4,
+    backgroundColor: RetroColors.surface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#e0e0e0",
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   stepIconActive: {
-    backgroundColor: Colors.light.tint,
-    borderColor: Colors.light.tint,
+    backgroundColor: RetroColors.primary,
+    borderColor: RetroColors.border,
   },
   stepIconCompleted: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: RetroColors.success,
+    borderColor: RetroColors.border,
   },
   stepIconText: {
     fontSize: 22,
@@ -888,32 +931,37 @@ const styles = StyleSheet.create({
   stepLine: {
     width: 3,
     height: 40,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: RetroColors.border,
     marginTop: 8,
+    opacity: 0.3,
   },
   stepLineCompleted: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: RetroColors.success,
+    opacity: 1,
   },
   stepContent: {
     flex: 1,
     justifyContent: "center",
   },
   stepTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#999",
+    fontSize: 14,
+    fontWeight: "700",
+    color: RetroColors.textSecondary,
+    fontFamily: "monospace",
     marginBottom: 4,
+    textTransform: "uppercase",
   },
   stepTitleActive: {
-    color: Colors.light.text,
+    color: RetroColors.text,
   },
   stepDescription: {
-    fontSize: 14,
-    color: "#bbb",
-    lineHeight: 18,
+    fontSize: 12,
+    color: RetroColors.textSecondary,
+    fontFamily: "monospace",
+    lineHeight: 16,
   },
   stepDescriptionActive: {
-    color: Colors.light.icon,
+    color: RetroColors.textSecondary,
   },
   loadingContainer: {
     alignItems: "center",
@@ -923,40 +971,71 @@ const styles = StyleSheet.create({
   },
   loadingMessage: {
     fontSize: 14,
-    color: Colors.light.tint,
-    fontStyle: "italic",
+    color: RetroColors.primary,
+    fontFamily: "monospace",
+    fontWeight: "700",
+    textAlign: "center",
+    backgroundColor: RetroColors.surface,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   fixedFooter: {
     padding: 20,
-    backgroundColor: Colors.light.background,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    backgroundColor: RetroColors.background,
+    borderTopWidth: 3,
+    borderTopColor: RetroColors.border,
   },
   cancelButton: {
     backgroundColor: "transparent",
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.light.icon,
+    borderWidth: 2,
+    borderColor: RetroColors.border,
+    shadowColor: RetroColors.border,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   cancelButtonText: {
-    color: Colors.light.icon,
+    color: RetroColors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "700",
+    fontFamily: "monospace",
+    textTransform: "uppercase",
   },
   successContainer: {
     alignItems: "center",
     marginTop: 20,
     paddingHorizontal: 20,
+    backgroundColor: RetroColors.successLight,
+    marginHorizontal: 20,
+    padding: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: RetroColors.success,
+    shadowColor: RetroColors.success,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   successIcon: {
     fontSize: 40,
     marginBottom: 10,
   },
   successText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4CAF50",
+    fontSize: 16,
+    fontWeight: "700",
+    color: RetroColors.success,
+    fontFamily: "monospace",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
 });
