@@ -86,15 +86,15 @@ export const NeoBrutalButton: React.FC<NeoBrutalButtonProps> = ({
   return (
     <TouchableOpacity
       style={[
-        getButtonStyle(),
-        disabled && styles.buttonDisabled,
+        getButtonStyle() as ViewStyle,
+        disabled && (styles.buttonDisabled as ViewStyle),
         style,
       ]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
     >
-      <Text style={[getTextStyle(), disabled && styles.buttonTextDisabled, textStyle]}>
+      <Text style={[getTextStyle() as TextStyle, disabled && (styles.buttonTextDisabled as TextStyle), textStyle]}>
         {title.toUpperCase()}
       </Text>
     </TouchableOpacity>
@@ -144,7 +144,7 @@ export const NeoBrutalCard: React.FC<NeoBrutalCardProps> = ({
   };
 
   return (
-    <Surface style={[getCardStyle(), style]} elevation={0}>
+    <Surface style={[getCardStyle() as ViewStyle, style]} elevation={0}>
       {children}
     </Surface>
   );
@@ -183,11 +183,11 @@ export const NeoBrutalHeader: React.FC<NeoBrutalHeaderProps> = ({
 
   return (
     <View style={[styles.headerContainer, style]}>
-      <Text style={[getTitleStyle(), titleStyle]}>
+      <Text style={[getTitleStyle() as TextStyle, titleStyle]}>
         {title.toUpperCase()}
       </Text>
       {subtitle && (
-        <Text style={[styles.subtitle, subtitleStyle]}>
+        <Text style={[styles.subtitle as TextStyle, subtitleStyle]}>
           {subtitle}
         </Text>
       )}
@@ -243,8 +243,8 @@ export const NeoBrutalBadge: React.FC<NeoBrutalBadgeProps> = ({
   };
 
   return (
-    <View style={[getBadgeStyle(), style]}>
-      <Text style={[styles.badgeText, textStyle]}>
+    <View style={[getBadgeStyle() as ViewStyle, style]}>
+      <Text style={[styles.badgeText as TextStyle, textStyle]}>
         {text.toUpperCase()}
       </Text>
     </View>
@@ -285,7 +285,7 @@ export const NeoBrutalDivider: React.FC<NeoBrutalDividerProps> = ({
     };
   };
 
-  return <View style={[getDividerStyle(), style]} />;
+  return <View style={[getDividerStyle() as ViewStyle, style]} />;
 };
 
 const styles = StyleSheet.create({
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   buttonText: {
-    fontWeight: NeoBrutalismTypography.weights.bold,
+    fontWeight: NeoBrutalismTypography.weights.bold as TextStyle['fontWeight'],
     letterSpacing: 1,
   },
   buttonTextSmall: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: NeoBrutalismTypography.sizes.hero,
-    fontWeight: NeoBrutalismTypography.weights.heavy,
+    fontWeight: NeoBrutalismTypography.weights.heavy as TextStyle['fontWeight'],
     color: NeoBrutalismColors.textPrimary,
     lineHeight: NeoBrutalismTypography.lineHeights.tight * NeoBrutalismTypography.sizes.hero,
     textTransform: 'uppercase',
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: NeoBrutalismTypography.sizes.xxxl,
-    fontWeight: NeoBrutalismTypography.weights.bold,
+    fontWeight: NeoBrutalismTypography.weights.bold as TextStyle['fontWeight'],
     color: NeoBrutalismColors.textPrimary,
     lineHeight: NeoBrutalismTypography.lineHeights.tight * NeoBrutalismTypography.sizes.xxxl,
     textTransform: 'uppercase',
@@ -361,14 +361,14 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: NeoBrutalismTypography.sizes.xl,
-    fontWeight: NeoBrutalismTypography.weights.bold,
+    fontWeight: NeoBrutalismTypography.weights.bold as TextStyle['fontWeight'],
     color: NeoBrutalismColors.textPrimary,
     lineHeight: NeoBrutalismTypography.lineHeights.normal * NeoBrutalismTypography.sizes.xl,
     textTransform: 'uppercase',
   },
   subtitle: {
     fontSize: NeoBrutalismTypography.sizes.md,
-    fontWeight: NeoBrutalismTypography.weights.medium,
+    fontWeight: NeoBrutalismTypography.weights.medium as TextStyle['fontWeight'],
     color: NeoBrutalismColors.textSecondary,
     marginTop: NeoBrutalismSpacing.sm,
     lineHeight: NeoBrutalismTypography.lineHeights.normal * NeoBrutalismTypography.sizes.md,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: NeoBrutalismTypography.sizes.xs,
-    fontWeight: NeoBrutalismTypography.weights.bold,
+    fontWeight: NeoBrutalismTypography.weights.bold as TextStyle['fontWeight'],
     color: NeoBrutalismColors.textInverse,
     letterSpacing: 0.5,
   },

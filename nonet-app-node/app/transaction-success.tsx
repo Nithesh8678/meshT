@@ -20,7 +20,6 @@ export default function TransactionSuccessPage(): React.JSX.Element {
     amount,
     currency,
     toAddress,
-    fromAddress,
     chain,
     txHash,
     timestamp,
@@ -29,7 +28,6 @@ export default function TransactionSuccessPage(): React.JSX.Element {
     amount: string;
     currency: string;
     toAddress: string;
-    fromAddress: string;
     chain: string;
     txHash: string;
     timestamp: string;
@@ -37,16 +35,16 @@ export default function TransactionSuccessPage(): React.JSX.Element {
   }>();
 
   const handleGoHome = () => {
-    router.replace('/(tabs)/');
+    router.replace('/');
   };
 
   const handleNewTransaction = () => {
-    router.replace('/(tabs)/');
+    router.replace('/');
   };
 
   useEffect(() => {
     stopBroadcasting();
-  }, []);
+  }, [stopBroadcasting]);
 
   // Generate signature string from transaction hash (simplified for demo)
   const generateSignatureString = (hash: string): string => {

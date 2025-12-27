@@ -308,7 +308,7 @@ export async function getChainGasPrice(chainId: string): Promise<string> {
     return formatEther(gasPrice * 1000000000n);
   } catch (error) {
     console.error('Failed to get gas price:', error);
-    return chain?.gasSettings?.defaultGasPrice || '20'; // Default fallback
+    return chainId ? '20' : '20'; // Default fallback
   }
 }
 

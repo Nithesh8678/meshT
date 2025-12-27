@@ -13,7 +13,7 @@ export default function IndexPage(): React.JSX.Element {
     const timer = setTimeout(() => {
       if (isLoggedIn) {
         // User has a wallet, go directly to tabs
-        router.replace('/(tabs)/');
+        router.replace('/(tabs)');
       } else {
         // User doesn't have a wallet, show welcome page
         router.replace('/welcome');

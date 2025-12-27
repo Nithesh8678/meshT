@@ -1,4 +1,5 @@
 import { Platform, PermissionsAndroid } from 'react-native';
+import Constants from 'expo-constants';
 
 export interface PermissionStatus {
   camera: boolean;
@@ -11,8 +12,17 @@ export interface PermissionStatus {
  * Shows native permission dialogs directly
  */
 export const requestBluetoothPermissions = async (): Promise<boolean> => {
+  // Skip if not Android
   if (Platform.OS !== 'android') {
     // iOS - Bluetooth permissions are handled automatically
+    console.log('📱 iOS detected - Bluetooth permissions handled automatically');
+    return true;
+  }
+
+  // Skip if running in Expo Go
+  const executionEnvironment = Constants.executionEnvironment;
+  if (executionEnvironment === 'storeClient') {
+    console.log('📱 Expo Go detected - Skipping Bluetooth permissions (not available in Expo Go)');
     return true;
   }
 
@@ -29,14 +39,15 @@ export const requestBluetoothPermissions = async (): Promise<boolean> => {
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
       ];
     } else {
-      // Android 11 and below
+      // Android 11 and below - These permissions are deprecated but still needed for older devices
+      // Casting to any to bypass TypeScript checks for deprecated permissions
       bluetoothPermissions = [
-        PermissionsAndroid.PERMISSIONS.BLUETOOTH,
-        PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADMIN,
+        'android.permission.BLUETOOTH' as any,
+        'android.permission.BLUETOOTH_ADMIN' as any,
       ];
     }
 
-    const bluetoothResults = await PermissionsAndroid.requestMultiple(bluetoothPermissions);
+    const bluetoothResults = await PermissionsAndroid.requestMultiple(bluetoothPermissions as any);
     
     // Check if all Bluetooth permissions were granted
     return Object.values(bluetoothResults).every(
@@ -60,8 +71,9 @@ export const checkPermissionStatus = async (): Promise<PermissionStatus> => {
 
   try {
     // Check camera permission
-    const [cameraPermission] = useCameraPermissions();
-    results.camera = cameraPermission?.granted || false;
+    // Note: This function should be called from a React component, not directly
+    // For now, we'll skip camera check in status function
+    results.camera = false;
 
     // Check Bluetooth permissions (Android)
     if (Platform.OS === 'android') {

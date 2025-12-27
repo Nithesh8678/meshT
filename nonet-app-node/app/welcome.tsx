@@ -58,20 +58,33 @@ export default function WelcomePage(): React.JSX.Element {
       
       console.log('🔐 Starting wallet creation with permission requests...');
       
-      // 1. Request Camera Permission - Native dialog
+      // 1. Request Camera Permission - Native dialog with timeout
       console.log('📷 Requesting camera permission...');
-      const cameraResult = await requestCameraPermission();
-      console.log('Camera permission result:', cameraResult.status);
+      try {
+        const cameraResult = await Promise.race([
+          requestCameraPermission(),
+          new Promise<any>((_, reject) => 
+            setTimeout(() => reject(new Error('Camera permission timeout')), 10000)
+          )
+        ]);
+        console.log('Camera permission result:', cameraResult.status);
+      } catch (cameraError) {
+        console.warn('⚠️ Camera permission error (continuing anyway):', cameraError);
+      }
       
-      // 2. Request Bluetooth Permissions - Native dialogs
+      // 2. Request Bluetooth Permissions - Native dialogs with timeout
       console.log('📶 Requesting Bluetooth permissions...');
-      const bluetoothGranted = await requestBluetoothPermissions();
-      console.log('Bluetooth permission result:', bluetoothGranted);
-      
-      console.log('📋 Permission Summary:', {
-        camera: cameraResult.status === 'granted' ? '✅' : '❌',
-        bluetooth: bluetoothGranted ? '✅' : '❌',
-      });
+      try {
+        const bluetoothGranted = await Promise.race([
+          requestBluetoothPermissions(),
+          new Promise<boolean>((_, reject) => 
+            setTimeout(() => reject(new Error('Bluetooth permission timeout')), 10000)
+          )
+        ]);
+        console.log('Bluetooth permission result:', bluetoothGranted);
+      } catch (bluetoothError) {
+        console.warn('⚠️ Bluetooth permission error (continuing anyway):', bluetoothError);
+      }
       
       // Create wallet regardless of permission results
       // App will work with limited functionality if permissions denied
