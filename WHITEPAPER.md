@@ -1,4 +1,4 @@
-# NONET: Decentralized Mesh Network Protocol for Offline Blockchain Transactions
+# meshT: Decentralized Mesh Network Protocol for Offline Blockchain Transactions
 
 **Version 1.0**  
 **Date: September 2025**
@@ -7,7 +7,7 @@
 
 ## Abstract
 
-NONET introduces a revolutionary mesh networking protocol that enables blockchain transactions in offline environments through Bluetooth Low Energy (BLE) communication. By implementing a novel packet fragmentation and reassembly system, NONET allows cryptocurrency transactions to propagate through a peer-to-peer network until reaching an internet-connected node, which then broadcasts the transaction to the blockchain. This whitepaper presents the technical architecture, protocol specifications, and implementation details of the NONET system.
+meshT introduces a revolutionary mesh networking protocol that enables blockchain transactions in offline environments through Bluetooth Low Energy (BLE) communication. By implementing a novel packet fragmentation and reassembly system, meshT allows cryptocurrency transactions to propagate through a peer-to-peer network until reaching an internet-connected node, which then broadcasts the transaction to the blockchain. This whitepaper presents the technical architecture, protocol specifications, and implementation details of the meshT system.
 
 ---
 
@@ -19,7 +19,7 @@ Traditional blockchain transactions require constant internet connectivity, crea
 
 ### 1.2 Solution Overview
 
-NONET solves this problem by creating a mesh network using Bluetooth Low Energy (BLE) technology, allowing devices to relay transaction data through multiple hops until reaching an internet-connected node. The system implements a sophisticated packet fragmentation protocol to overcome BLE's 31-byte payload limitation while maintaining data integrity and preventing replay attacks.
+meshT solves this problem by creating a mesh network using Bluetooth Low Energy (BLE) technology, allowing devices to relay transaction data through multiple hops until reaching an internet-connected node. The system implements a sophisticated packet fragmentation protocol to overcome BLE's 31-byte payload limitation while maintaining data integrity and preventing replay attacks.
 
 ### 1.3 Key Innovations
 
@@ -35,7 +35,7 @@ NONET solves this problem by creating a mesh network using Bluetooth Low Energy 
 
 ### 2.1 Network Topology
 
-NONET operates as a decentralized mesh network where each node can function as:
+meshT operates as a decentralized mesh network where each node can function as:
 
 - **Originator**: Creates and broadcasts new transactions
 - **Relay**: Forwards received packets to extend network reach
@@ -86,7 +86,7 @@ NONET operates as a decentralized mesh network where each node can function as:
 
 ### 3.1 Packet Structure
 
-Each NONET packet consists of an 11-byte payload transmitted over BLE:
+Each meshT packet consists of an 11-byte payload transmitted over BLE:
 
 ```
 ┌─────────────┬─────────────┬─────────────┬─────────────────────┐
@@ -195,7 +195,7 @@ When a complete packet reaches an internet-connected node:
 
 ### 5.1 Multi-Chain Support
 
-NONET supports multiple EVM-compatible blockchains:
+meshT supports multiple EVM-compatible blockchains:
 
 - **Flow EVM Testnet** (Chain ID: 545)
 - **Hedera Testnet** (Chain ID: 296)
@@ -221,7 +221,7 @@ contract.transfer(receiverAddress, transferAmount);
 
 ### 5.3 EIP-3009 Meta-Transactions
 
-NONET implements EIP-3009 for gasless transactions:
+meshT implements EIP-3009 for gasless transactions:
 
 ```solidity
 function transferWithAuthorization(
@@ -465,7 +465,7 @@ interface BleContextType {
 #### 11.1.1 Relay Rewards
 
 - **Gas Fee Sharing**: Portion of transaction fees for relays
-- **Token Incentives**: Native NONET tokens for network participation
+- **Token Incentives**: Native meshT tokens for network participation
 - **Reputation Bonuses**: Additional rewards for reliable nodes
 
 #### 11.1.2 Gateway Operations
@@ -476,7 +476,7 @@ interface BleContextType {
 
 ### 11.2 Tokenomics
 
-#### 11.2.1 NONET Token Utility
+#### 11.2.1 meshT Token Utility
 
 - **Network Fees**: Payment for mesh network services
 - **Governance**: Voting on protocol upgrades
@@ -484,7 +484,7 @@ interface BleContextType {
 
 #### 11.2.2 Distribution Model
 
-- **Initial Supply**: 1,000,000 NONET tokens
+- **Initial Supply**: 1,000,000 meshT tokens
 - **Mining Rewards**: Tokens earned through network participation
 - **Developer Fund**: Reserved tokens for ecosystem development
 
@@ -524,9 +524,9 @@ interface BleContextType {
 
 ## 13. Conclusion
 
-NONET represents a significant advancement in decentralized finance infrastructure, enabling blockchain transactions in previously impossible scenarios. By combining mesh networking with blockchain technology, NONET creates a resilient, censorship-resistant payment system that operates independently of traditional internet infrastructure.
+meshT represents a significant advancement in decentralized finance infrastructure, enabling blockchain transactions in previously impossible scenarios. By combining mesh networking with blockchain technology, meshT creates a resilient, censorship-resistant payment system that operates independently of traditional internet infrastructure.
 
-The protocol's innovative packet fragmentation system, multi-chain support, and EIP-3009 integration demonstrate the potential for offline blockchain applications. As the system continues to evolve, NONET will play a crucial role in bringing cryptocurrency access to underserved populations and emergency scenarios worldwide.
+The protocol's innovative packet fragmentation system, multi-chain support, and EIP-3009 integration demonstrate the potential for offline blockchain applications. As the system continues to evolve, meshT will play a crucial role in bringing cryptocurrency access to underserved populations and emergency scenarios worldwide.
 
 ### 13.1 Key Contributions
 
@@ -538,7 +538,7 @@ The protocol's innovative packet fragmentation system, multi-chain support, and 
 
 ### 13.2 Impact Statement
 
-NONET has the potential to revolutionize financial inclusion by removing the internet connectivity barrier to blockchain transactions. This technology could enable cryptocurrency adoption in developing regions, provide resilience during emergencies, and create new models for peer-to-peer value transfer.
+meshT has the potential to revolutionize financial inclusion by removing the internet connectivity barrier to blockchain transactions. This technology could enable cryptocurrency adoption in developing regions, provide resilience during emergencies, and create new models for peer-to-peer value transfer.
 
 ---
 

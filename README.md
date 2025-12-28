@@ -52,7 +52,7 @@ Android Studio (for Android)
 2. **Navigate to App Directory**
 
    ```bash
-   cd nonet-app-node
+   cd meshT-app-node
    ```
 
 3. **Install Dependencies**
@@ -115,7 +115,7 @@ The app requires the following permissions to function:
 
 ```
 meshT/
-├── 📱 nonet-app-node/           # Main React Native application
+├── 📱 meshT-app-node/           # Main React Native application
 │   ├── app/                     # Expo Router pages
 │   │   ├── (tabs)/             # Tab-based navigation
 │   │   │   ├── index.tsx       # Home/Dashboard
@@ -146,7 +146,7 @@ meshT/
 
 #### `contexts/BleContext.tsx`
 
-The heart of the mesh networking system.  Manages: 
+The heart of the mesh networking system. Manages:
 
 - BLE device scanning and advertising
 - Packet fragmentation and reassembly
@@ -155,7 +155,7 @@ The heart of the mesh networking system.  Manages:
 
 #### `utils/bleUtils.ts`
 
-Low-level BLE protocol implementation: 
+Low-level BLE protocol implementation:
 
 - Packet encoding/decoding
 - Message fragmentation algorithm
@@ -219,7 +219,7 @@ Each device maintains a master state of all active messages:
         "data": {
             1: "binary_chunk_1",
             2: "binary_chunk_2",
-            ... 
+            ...
         }
     }
 }
@@ -227,7 +227,7 @@ Each device maintains a master state of all active messages:
 
 ### BLE Protocol Flow
 
-1. **Message Creation**:  Transaction data is encoded and fragmented
+1. **Message Creation**: Transaction data is encoded and fragmented
 2. **Broadcasting**: Fragments are advertised via BLE GAP
 3. **Relay Propagation**: Nearby devices receive and re-broadcast
 4. **Gateway Processing**: Internet-connected device submits to blockchain
@@ -243,7 +243,7 @@ Each device maintains a master state of all active messages:
 
 #### Smart Contract Addresses
 
-- **Hedera Testnet**:  [`0xc6C46289fA5FdC583Cdb5e5C2900af4333423787`](https://hashscan.io/testnet/contract/0.0.6915692)
+- **Hedera Testnet**: [`0xc6C46289fA5FdC583Cdb5e5C2900af4333423787`](https://hashscan.io/testnet/contract/0.0.6915692)
 - **Flow Testnet**: [`0xc7a5Fd47Bc5725600E03124263056C897fb96b6c`](https://evm-testnet.flowscan.io/address/0xc7a5Fd47Bc5725600E03124263056C897fb96b6c)
 
 - Hedera Testnet: [0xc7a5fd47bc5725600e03124263056c897fb96b6c](https://hashscan.io/testnet/contract/0.0.6917378)
@@ -322,7 +322,7 @@ function transferWithAuthorization(
 
 - **Non-Custodial**: Users control private keys
 - **Local Storage**: Keys encrypted on device
-- **Pseudonymous**:  Addresses don't reveal identity
+- **Pseudonymous**: Addresses don't reveal identity
 
 ---
 
@@ -371,7 +371,7 @@ npm test
 ## 🤝 Contributing
 
 1. **Fork the Repository**
-2. **Create Feature Branch**:  `git checkout -b feature/amazing-feature`
+2. **Create Feature Branch**: `git checkout -b feature/amazing-feature`
 3. **Commit Changes**: `git commit -m 'Add amazing feature'`
 4. **Push to Branch**: `git push origin feature/amazing-feature`
 5. **Open Pull Request**
@@ -389,7 +389,7 @@ npm test
 
 ### BLE Transmission
 
-- **Advertisement Interval**:  250ms per packet
+- **Advertisement Interval**: 250ms per packet
 - **Data Rate**: ~32 bytes/second per connection
 - **Range**: ~100 meters in open space
 - **Concurrent Connections**: Device-dependent

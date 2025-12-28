@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "nonet-app-node",
-    "slug": "nonet-app-node",
+    "name": "meshT-app-node",
+    "slug": "meshT-app-node",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "nonetappnode",
+    "scheme": "meshTappnode",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
-      "package": "com.nonet.app",
+      "package": "com.meshT.app",
       "compileSdkVersion": 35,
       "targetSdkVersion": 34,
       "minSdkVersion": 24,
@@ -64,7 +64,7 @@
       }
     },
     "ios": {
-      "bundleIdentifier": "com.nonet.app"
+      "bundleIdentifier": "com.meshT.app"
     }
   }
 }

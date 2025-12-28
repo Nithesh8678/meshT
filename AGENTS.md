@@ -115,7 +115,7 @@ The app requires the following permissions to function:
 
 ```
 MeshT/
-├── 📱 nonet-app-node/           # Main React Native application
+├── 📱 meshT-app-node/           # Main React Native application
 │   ├── app/                     # Expo Router pages
 │   │   ├── (tabs)/             # Tab-based navigation
 │   │   │   ├── index.tsx       # Home/Dashboard
