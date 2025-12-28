@@ -1,15 +1,15 @@
 {
   "expo": {
     "name": "MESHT",
-    "slug": "MESHT",
+    "slug": "mesht",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.1.png",
-    "scheme": "nonetappnode",
+    "scheme": "meshTappnode",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
-      "package": "com.nonet.app",
+      "package": "com.meshTappnode.app",
       "compileSdkVersion": 35,
       "targetSdkVersion": 34,
       "minSdkVersion": 24,
@@ -60,11 +60,11 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d1b11e8d-c7ea-48a9-aceb-cde2b8035876"
+        "projectId": "85e201c6-cc55-400c-9568-3acb94c51070"
       }
     },
     "ios": {
-      "bundleIdentifier": "com.nonet.app"
+      "bundleIdentifier": "com.meshTappnode.app"
     }
   }
 }
